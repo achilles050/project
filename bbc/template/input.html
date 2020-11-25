@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <form method="GET">
+        {% csrf_token %}
+        <input type="text" name="input" placeholder="Type input" value={{request.GET.input}}>
+        <input type="submit" value="Press">
+    </form>
+    {% if input %}
+        <h2>input is : {{input}}</h2>
+    {% endif %}
+</body>
+</html>

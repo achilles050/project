@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="post" placeholder="Type input" value={{request.POST.post}}>
+        <input type="submit" value="Press">
+    </form>
+    {% if post %}
+        <h2>post is : {{post}}</h2>
+    {% endif %}
+</body>
+</html>

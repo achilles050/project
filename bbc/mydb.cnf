@@ -1,0 +1,5 @@
+[client]
+'database' = 'ite60010062_dbname'
+'user' = '60010062'
+'password' = '123456'
+'default-character-set' = 'utf8'

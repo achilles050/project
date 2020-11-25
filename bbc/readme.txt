@@ -1,0 +1,1 @@
+# dont forget about cronjob everyday 1.clean status table 2.booking for group auto by day of week 3.check continue book
