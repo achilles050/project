@@ -19,7 +19,7 @@ def court_status(request):
                        'name': i.name,
                        'time': i.time.hour
                        })
-    return HttpResponse(json.dumps(mydict), content_type='applicationjson')
+    return HttpResponse(json.dumps(mydict), content_type='application/json')
 
 
 def booking(request):

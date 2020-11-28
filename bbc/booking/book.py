@@ -5,17 +5,19 @@ from django.core.mail import send_mail
 
 
 def check_valid(court, yourtime):
-    t = time(yourtime)
-    print('yourtime : ', t)
-    detail = models.OtherDetail.objects.get(pk=1)
-    print('open : ', detail.time_open)
-    print('close : ', detail.time_close)
-    if t >= detail.time_open and t <= detail.time_close:
-        print('OPEN!!!')
-    else:
-        print('CLOSE!!!')
-        return False
     try:
+        t = time(yourtime)
+        print('yourtime : ', t)
+        detail = models.OtherDetail.objects.get(pk=1)
+        print('open : ', detail.time_open)
+        print('close : ', detail.time_close)
+
+        if t >= detail.time_open and t <= detail.time_close:
+            print('OPEN!!!')
+        else:
+            print('CLOSE!!!')
+            return False
+
         q = models.Status.objects.filter(time=t).filter(court=court)
         print(q[0].name)
         print('NOT AVAILABLE', models.Status.objects.filter(
@@ -33,7 +35,7 @@ def booking(member, court, yourtime):
         t = time(int(yourtime))
         print(member)
         print(t)
-        book = models.Booking(member=Member.objects.get(username=member), court=models.CourtDetail.objects.get(
+        book = models.HistoryMember(member=Member.objects.get(username=member), court=models.CourtDetail.objects.get(
             court_number=court), time=t)
         book.save()
         print('ok')

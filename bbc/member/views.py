@@ -3,7 +3,10 @@ from . import models
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout, get_user
+from django.http.response import JsonResponse
+from rest_framework.parsers import JSONParser
 from datetime import date
+from .form import LoginForm
 # Create your views here.
 
 
@@ -22,14 +25,23 @@ def Index(request):
 
 def Register(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        firstname = request.POST.get('first_name')
-        lastname = request.POST.get('last_name')
-        email = request.POST.get('email')
-        tel = request.POST.get('tel')
-        birthday = request.POST.get('birthday')
-        gender = request.POST.get('gender')
+        my_data = JSONParser().parse(request)
+        username = my_data['username']
+        password = my_data['password']
+        firstname = my_data['firstname']
+        lastname = my_data['lastname']
+        email = my_data['email']
+        tel = my_data['tel']
+        birthday = my_data['birthday']
+        gender = my_data['gender']
+        # username = request.POST.get('username')
+        # password = request.POST.get('password')
+        # firstname = request.POST.get('first_name')
+        # lastname = request.POST.get('last_name')
+        # email = request.POST.get('email')
+        # tel = request.POST.get('tel')
+        # birthday = request.POST.get('birthday')
+        # gender = request.POST.get('gender')
         try:
             b = birthday.split('/')
             birth = date(int(b[0]), int(b[1]), int(b[2]))
@@ -57,18 +69,32 @@ def Register(request):
 
 def Login(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+
+        my_data = JSONParser().parse(request)
+        print(type(my_data))
+        print(my_data['username'])
+        print('1')
+        # print(request.body)
+        username = my_data['username']
+        password = my_data['password']
+        print(username)
+        print(password)
         user_login = authenticate(
             request, username=username, password=password)
         if user_login is not None:
+            s = request.session._session_key
+            print(type(s))
+            print(s)
             login(request, user_login)
             print("You're login now")
-            return HttpResponseRedirect('/')
+            print(request.user)
+            return HttpResponse('ok!!!')
+            # return HttpResponseRedirect('/')
         else:
             return HttpResponse('try again!!!')
     else:
-        return HttpResponse('POST method only !!!')
+        return render(request, 'login.html', {'form': LoginForm})
+        # return HttpResponse('POST method only !!!')
 
 
 @login_required(login_url='/login/')
