@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from . import models
+from .models import Member
+from .serializers import MemberSerializer
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view
 from django.contrib.auth import authenticate, login, logout, get_user
 from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser
@@ -26,14 +28,15 @@ def Index(request):
 def Register(request):
     if request.method == 'POST':
         my_data = JSONParser().parse(request)
+        print(my_data)
         username = my_data['username']
         password = my_data['password']
         firstname = my_data['firstname']
         lastname = my_data['lastname']
         email = my_data['email']
-        tel = my_data['tel']
-        birthday = my_data['birthday']
-        gender = my_data['gender']
+        tel = '00000221'  # my_data['tel']
+        birthday = '1999/03/15'  # my_data['birthday']
+        gender = 'male'  # my_data['gender']
         # username = request.POST.get('username')
         # password = request.POST.get('password')
         # firstname = request.POST.get('first_name')
@@ -67,10 +70,11 @@ def Register(request):
         return HttpResponse('Try Again!!!')
 
 
+@api_view(['GET', 'POST'])
 def Login(request):
     if request.method == 'POST':
-
-        my_data = JSONParser().parse(request)
+        myrequest = request
+        my_data = JSONParser().parse(myrequest)
         print(type(my_data))
         print(my_data['username'])
         print('1')
@@ -82,22 +86,27 @@ def Login(request):
         user_login = authenticate(
             request, username=username, password=password)
         if user_login is not None:
-            s = request.session._session_key
-            print(type(s))
-            print(s)
             login(request, user_login)
             print("You're login now")
             print(request.user)
-            return HttpResponse('ok!!!')
-            # return HttpResponseRedirect('/')
+            s = request.session._session_key
+            print('session key : ', s)
+            print('username : ', request.user.id)
+            member = Member.objects.get(pk=request.user.id)
+            print(type(member))
+            print(member.username)
+            mem_serializer = MemberSerializer(member)
+            return JsonResponse(mem_serializer.data, safe=False)
+            # return HttpResponse('ok!!!')
         else:
-            return HttpResponse('try again!!!')
+            return JsonResponse({'message': 'username or password not correct!!!'})
+            # return HttpResponse('try again!!!')
     else:
         return render(request, 'login.html', {'form': LoginForm})
         # return HttpResponse('POST method only !!!')
 
 
-@login_required(login_url='/login/')
+@ login_required(login_url='/login/')
 def Profile(request):
     user_id = request.user.id
     print(type(user_id))
@@ -107,7 +116,13 @@ def Profile(request):
     return HttpResponse('you are user_id =  {}'.format(user_id))
 
 
-@login_required(login_url='/login/')
+@ login_required(login_url='/login/')
 def Logout(request):
     logout(request)
     return HttpResponseRedirect('/')
+
+
+@api_view(['GET', 'POST'])
+def test(request):
+    if request.method == 'POST':
+        Member.objects.all()
