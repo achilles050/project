@@ -96,7 +96,8 @@ def Login(request):
             print(type(member))
             print(member.username)
             mem_serializer = MemberSerializer(member)
-            return JsonResponse(mem_serializer.data, safe=False)
+
+            return JsonResponse({'accessToken': s}, safe=False)
             # return HttpResponse('ok!!!')
         else:
             return JsonResponse({'message': 'username or password not correct!!!'})
