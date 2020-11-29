@@ -9,6 +9,7 @@ from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser
 from datetime import date
 from .form import LoginForm
+import json
 # Create your views here.
 
 
@@ -90,14 +91,15 @@ def Login(request):
             print("You're login now")
             print(request.user)
             s = request.session._session_key
+            u = request.user
             print('session key : ', s)
             print('username : ', request.user.id)
             member = Member.objects.get(pk=request.user.id)
             print(type(member))
             print(member.username)
-            mem_serializer = MemberSerializer(member)
 
-            return JsonResponse({'accessToken': s}, safe=False)
+            mem_serializer = MemberSerializer(member)
+            return JsonResponse({'accessToken': s, 'username': member.username}, safe=False)
             # return HttpResponse('ok!!!')
         else:
             return JsonResponse({'message': 'username or password not correct!!!'})
