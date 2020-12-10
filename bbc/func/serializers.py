@@ -23,9 +23,9 @@ class MemberSerializer(serializers.HyperlinkedModelSerializer):
                   'email', 'password', 'tel', 'birthday', 'gender', 'group_name')
 
 
-class ConfirmPaySerializer(serializers.HyperlinkedModelSerializer):
+class CheckPaymentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = bk_models.ConfirmPay
+        model = bk_models.CheckPayment
         fields = ('history', 'ref1', 'ref2',
                   'pay', 'state', 'is_found')
 
@@ -44,11 +44,11 @@ class OtherDetailSerializer(serializers.HyperlinkedModelSerializer):
                   'time_close', 'force_close')
 
 
-class HistoryGuessSerializer(serializers.HyperlinkedModelSerializer):
+class HistoryGuestSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = bk_models.HistoryGuess
-        fields = ('id', 'guess_name', 'court', 'date_time',
-                  'pay', 'guess_email', 'guess_tel', 'receipt')
+        model = bk_models.HistoryGuest
+        fields = ('id', 'guest_name', 'court', 'date_time',
+                  'pay', 'guest_email', 'guest_tel', 'receipt')
 
 
 class HistoryMemberSerializer(serializers.HyperlinkedModelSerializer):

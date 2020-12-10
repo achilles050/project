@@ -22,9 +22,9 @@ class MemberViewSet(viewsets.ModelViewSet):
     serializer_class = s.MemberSerializer
 
 
-class ConfirmPayViewSet(viewsets.ModelViewSet):
-    queryset = bk_models.ConfirmPay.objects.all().order_by('id')
-    serializer_class = s.ConfirmPaySerializer
+class CheckPaymentViewSet(viewsets.ModelViewSet):
+    queryset = bk_models.CheckPayment.objects.all().order_by('id')
+    serializer_class = s.CheckPaymentSerializer
 
 
 class CourtDetailViewSet(viewsets.ModelViewSet):
@@ -37,9 +37,9 @@ class OtherDetailViewSet(viewsets.ModelViewSet):
     serializer_class = s.OtherDetailSerializer
 
 
-class HistoryGuessViewSet(viewsets.ModelViewSet):
-    queryset = bk_models.HistoryGuess.objects.all().order_by('id')
-    serializer_class = s.HistoryGuessSerializer
+class HistoryGuestViewSet(viewsets.ModelViewSet):
+    queryset = bk_models.HistoryGuest.objects.all().order_by('id')
+    serializer_class = s.HistoryGuestSerializer
 
 
 class HistoryMemberViewSet(viewsets.ModelViewSet):

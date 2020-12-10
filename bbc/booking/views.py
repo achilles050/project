@@ -52,6 +52,6 @@ def confirm(request):
     except Exception as e:
         if e == 'error':
             pass
-            # booking in status models and historyguess
+            # booking in status models and historyguest
         print(e)
     return 0

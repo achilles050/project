@@ -4,9 +4,9 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 
-class ConfirmPay(models.Model):
+class CheckPayment(models.Model):
     class Meta:
-        db_table = 'confirm_pay'
+        db_table = 'check_payment'
     history = models.ForeignKey(
         'HistoryMember', on_delete=models.CASCADE)
     ref1 = models.DecimalField(max_digits=20, decimal_places=0)
@@ -40,18 +40,19 @@ class OtherDetail(models.Model):
     time_open = models.TimeField()
     time_close = models.TimeField()
     force_close = models.BooleanField(default=False)
+    #annouce = models.CharField(max_length=500)
 
 
-class HistoryGuess(models.Model):
+class HistoryGuest(models.Model):
     class Meta:
-        db_table = 'history_guess'
-    guess_name = models.CharField(max_length=50)
+        db_table = 'history_guest'
+    guest_name = models.CharField(max_length=50)
     court = models.ForeignKey(CourtDetail,
                               to_field='court_number', unique=True, on_delete=models.CASCADE)
     date_time = models.DateTimeField()
     pay = models.DecimalField(max_digits=5, decimal_places=2)
-    guess_email = models.EmailField()
-    guess_tel = models.CharField(max_length=10)
+    guest_email = models.EmailField()
+    guest_tel = models.CharField(max_length=10)
     receipt = models.CharField(max_length=32)
 
 
@@ -66,7 +67,7 @@ class HistoryMember(models.Model):
     price_normal = models.DecimalField(max_digits=5, decimal_places=2)
     total_ds = models.DecimalField(max_digits=5, decimal_places=2)
     pay = models.DecimalField(max_digits=5, decimal_places=2)
-    # 0 = booking, 1 = confirmed, 2 = canceled, 3 = confirmpay false(checking not found transaction)
+    # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
     state = models.IntegerField(default=0)
     receipt = models.CharField(max_length=32)
 
