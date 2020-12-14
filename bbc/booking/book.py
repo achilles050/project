@@ -57,20 +57,25 @@ def refund_check(history_id):
         print('error!!!')
 
 
-def sendemail():
-    send_mail(
-        subject='SubjectTest',  # Subject here
-        message='MessageTest',  # Here is the message.
-        from_email='60010062@kmitl.ac.th',  # from@example.com
-        recipient_list=['thorn3579@gmail.com'],  # to@example.com
-        fail_silently=False,
-        auth_user='Login',
-        auth_password='Password',
-    )
+# def sendemail():
+#     send_mail(
+#         subject='SubjectTest',  # Subject here
+#         message='MessageTest',  # Here is the message.
+#         from_email='@gmail.com',  # from@example.com
+#         recipient_list=['thorn3579@gmail.com'],  # to@example.com
+#         fail_silently=False,
+#     )
 
 
 def test():
     try:
-        sendemail()
+        # sendemail()
+        send_mail(
+            subject='SubjectTest',  # Subject here
+            message='MessageTest',  # Here is the message.
+            from_email='bbctesting01@gmail.com',  # from@example.com
+            recipient_list=['thorn3579@gmail.com'],  # to@example.com
+            fail_silently=False,
+        )
     except Exception as e:
         print(e)

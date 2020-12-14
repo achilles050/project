@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import smtplib
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -163,14 +164,39 @@ STATIC_URL = '/static/'
 
 
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (
-    'http://127.0.0.1:3000',
-)
+# CORS_ORIGIN_WHITELIST = (
+#     'http://127.0.0.1:3000',
+#     'http://localhost:3000',
+# )
 
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.yourserver.com'
-# EMAIL_PORT = '<your-server-port>'
-# EMAIL_HOST_USER = 'your@djangoapp.com'
-# EMAIL_HOST_PASSWORD = 'your-email account-password'
-# EMAIL_USE_TLS = True
-# EMAIL_USE_SSL = False
+
+CORS_ALLOWED_ORIGINS = [
+    'http://127.0.0.1:3000',
+    'http://localhost:3000'
+]
+
+# CORS_ORIGIN_REGEX_WHITELIST = [
+#     'http://localhost:3000',
+#     'http://127.0.0.1:3000',
+# ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# SESSION_COOKIE_SAMESITE = 'Strict'  # 'Lax'
+
+#SESSION_COOKIE_DOMAIN = ['http://127.0.0.1:3000', 'http://localhost:3000']
+
+#SESSION_COOKIE_DOMAIN = 'http://localhost:8000'
+
+# SESSION_COOKIE_SAMESITE = None
+# CSRF_COOKIE_SAMESITE = None
+# CSRF_TRUSTED_ORIGINS = ['127.0.0.1:3000']
+
+
+# DataFlair
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'bbctesting01'
+EMAIL_HOST_PASSWORD = 'bbc*6263'

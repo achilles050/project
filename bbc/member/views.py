@@ -93,7 +93,10 @@ def Login(request):
                 return JsonResponse({'accessToken': session, 'username': member.username}, safe=False)
                 # return HttpResponse('ok!!!')
             else:
-                return JsonResponse({'message': 'username or password not correct!!!'})
+                member = models.Member.objects.get(pk=request.user.id)
+                mem_serializer = MemberSerializer(member)
+                return JsonResponse(mem_serializer.data, safe=False)
+                # return JsonResponse({'message': 'username or password not correct!!!'})
                 # return HttpResponse('try again!!!')
         else:
             return render(request, 'login.html', {'form': LoginForm})
@@ -102,24 +105,33 @@ def Login(request):
         print(e)
 
 
-@ login_required(login_url='/login/')
+# @ login_required(login_url='/login/')
 def Profile(request):
-    user_id = request.user.id
-    print(type(user_id))
-    user_id = str(user_id)
-    print(user_id)
-    print(models.Member.objects.get(username=request.user))
+    try:
+        print(request.user)
+        user_id = request.user.id
+        print(type(user_id))
+        user_id = str(user_id)
+        print(user_id)
+        print(models.Member.objects.get(username=request.user))
 
-    member = models.Member.objects.get(pk=request.user.id)
-    mem_serializer = MemberSerializer(member)
-    return JsonResponse(mem_serializer, safe=False)
+        member = models.Member.objects.get(pk=request.user.id)
+        mem_serializer = MemberSerializer(member)
+        return JsonResponse(mem_serializer.data, safe=False)
+    except:
+        return HttpResponse('error')
     # return HttpResponse('you are user_id =  {}'.format(user_id))
 
 
-@ login_required(login_url='/login/')
+# @login_required(login_url='/login/')
 def Logout(request):
-    logout(request)
-    return HttpResponseRedirect('/')
+    try:
+        print('going to logout')
+        logout(request)
+        print('logouted')
+        return HttpResponse('ok logouted')
+    except Exception as e:
+        print(e)
 
 
 @api_view(['GET', 'POST'])

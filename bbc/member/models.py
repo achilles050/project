@@ -36,13 +36,3 @@ class Member(User):
     gender = models.CharField(max_length=10)
     group_name = models.ForeignKey(
         Group, on_delete=models.SET_NULL, null=True)
-
-
-# class GroupMember(models.Model):
-#     class Meta:
-#         db_table = 'group_member'
-#     group = models.ForeignKey(
-#         Group, to_field='group_name', on_delete=models.CASCADE)
-#     member = models.ForeignKey(
-#         Member, to_field='username', on_delete=models.CASCADE)
-#     on_court = models.BooleanField(default=False)
