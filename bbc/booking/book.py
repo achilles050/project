@@ -36,7 +36,7 @@ def booking(member, court, yourtime):
         print(member)
         print(t)
         book = models.HistoryMember(member=Member.objects.get(username=member), court=models.CourtDetail.objects.get(
-            court_number=court), time=t)
+            court_number=court), time=t) #state default = 0 >>> booking
         book.save()
         print('ok')
         return True
@@ -45,7 +45,17 @@ def booking(member, court, yourtime):
         return False
 
 
-# def confirm()
+# def confirm(history):
+#     try:
+#         query = models.HistoryMember.objects.get(pk=history)
+#         query.state = 1 # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
+#         query.court
+#         status = models.Status(court=,name=,time=)
+#         status.save()
+#         return True
+#     except Exception as e:
+#         print(e)
+#         return False
 
 
 def refund_check(history_id):

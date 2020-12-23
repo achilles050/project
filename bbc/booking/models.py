@@ -7,11 +7,15 @@ from django.contrib.auth.models import User
 class CheckPayment(models.Model):
     class Meta:
         db_table = 'check_payment'
-    history = models.ForeignKey(
-        'HistoryMember', on_delete=models.CASCADE)
-    ref1 = models.DecimalField(max_digits=20, decimal_places=0)
-    ref2 = models.DecimalField(max_digits=20, decimal_places=0)
-    pay = models.DecimalField(max_digits=5, decimal_places=2)
+    history_guest = models.ForeignKey(
+        'HistoryGuest', on_delete=models.CASCADE, null=True)
+    history_member = models.ForeignKey(
+        'HistoryMember', on_delete=models.CASCADE, null=True)
+    history_group = models.ForeignKey(
+        'HistoryGroup', on_delete=models.CASCADE, null=True)
+    transection = models.DecimalField(max_digits=20, decimal_places=0)
+    #ref2 = models.DecimalField(max_digits=20, decimal_places=0)
+    amount = models.DecimalField(max_digits=5, decimal_places=2)
     # change when check success by admin
     state = models.BooleanField(default=False)
     # changee when checking found transaction if not change state in hsmem to 3
@@ -47,8 +51,7 @@ class HistoryGuest(models.Model):
     class Meta:
         db_table = 'history_guest'
     guest_name = models.CharField(max_length=50)
-    court = models.ForeignKey(CourtDetail,
-                              to_field='court_number', unique=True, on_delete=models.CASCADE)
+    court = models.ForeignKey(CourtDetail, on_delete=models.CASCADE)
     date_time = models.DateTimeField()
     pay = models.DecimalField(max_digits=5, decimal_places=2)
     guest_email = models.EmailField()
@@ -62,7 +65,7 @@ class HistoryMember(models.Model):
     username = models.ForeignKey(
         Member, on_delete=models.CASCADE)
     court = models.ForeignKey(
-        CourtDetail, to_field='court_number', unique=True, on_delete=models.CASCADE)
+        CourtDetail, on_delete=models.CASCADE)
     date_time = models.DateTimeField()
     price_normal = models.DecimalField(max_digits=5, decimal_places=2)
     total_ds = models.DecimalField(max_digits=5, decimal_places=2)
@@ -78,22 +81,9 @@ class HistoryGroup(models.Model):
     header = models.ForeignKey(
         Group, on_delete=models.CASCADE)
     court = models.ForeignKey(
-        CourtDetail, to_field='court_number', unique=True, on_delete=models.CASCADE)
+        CourtDetail, on_delete=models.CASCADE)
     day = models.DecimalField(max_digits=1, decimal_places=0)
     time = models.TimeField()
-
-
-class RequesMember(models.Model):
-    class Meta:
-        db_table = 'request_member'
-    header = models.ForeignKey(
-        Group, on_delete=models.CASCADE)
-    member = models.ForeignKey(
-        Member, on_delete=models.CASCADE)
-    # True when request to create group
-    is_create = models.BooleanField(default=False)
-    # change to True when action that request
-    state = models.BooleanField(default=False)
 
 
 class Refund(models.Model):
@@ -110,7 +100,7 @@ class Status(models.Model):
     class Meta:
         db_table = 'status'
     court = models.ForeignKey(
-        CourtDetail, to_field='court_number', unique=True, on_delete=models.CASCADE)
+        CourtDetail, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     time = models.TimeField()
 

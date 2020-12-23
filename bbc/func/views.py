@@ -53,7 +53,7 @@ class HistoryGroupViewSet(viewsets.ModelViewSet):
 
 
 class RequestMemberViewSet(viewsets.ModelViewSet):
-    queryset = bk_models.RequesMember.objects.all().order_by('id')
+    queryset = mem_models.RequestMember.objects.all().order_by('id')
     serializer_class = s.RequestMemberSerializer
 
 

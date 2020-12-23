@@ -5,7 +5,7 @@
 
 <body>
   <form method="post" action="{% url 'login' %}">
-    <!-- {% csrf_token %} -->
+    {% csrf_token %}
     <table>
       <tr>
         <td>{{ form.username.label_tag }}</td>

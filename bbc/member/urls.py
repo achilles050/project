@@ -8,4 +8,7 @@ urlpatterns = [
     path('login/', views.Login, name='login'),
     path('logout/', views.Logout),
     path('profile/', views.Profile),
+    path('listgroup/', views.Listgroup),
+    path('mygroup/', views.Mygroup),
+    path('creategroup/', views.Creategroup)
 ]

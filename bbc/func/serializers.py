@@ -6,7 +6,7 @@ from booking import models as bk_models
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = mem_models.Group
-        fields = ('group_name', 'header', 'outside_detail', 'inside_detail',
+        fields = ('group', 'header', 'outside_detail', 'inside_detail',
                   'is_continue', 'is_active')
 
 
@@ -20,7 +20,13 @@ class MemberSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = mem_models.Member
         fields = ('username', 'first_name', 'last_name',
-                  'email', 'password', 'tel', 'birthday', 'gender', 'group_name')
+                  'email', 'password', 'tel', 'birthday', 'gender', 'mygroup')
+
+
+class RequestMemberSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = mem_models.RequestMember
+        fields = ('header', 'member', 'action', 'state')
 
 
 class CheckPaymentSerializer(serializers.HyperlinkedModelSerializer):
@@ -62,12 +68,6 @@ class HistoryGroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = bk_models.HistoryGroup
         fields = ('header', 'court', 'day', 'time')
-
-
-class RequestMemberSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = bk_models.RequesMember
-        fields = ('header', 'member', 'is_create', 'state')
 
 
 class RefundSerializer(serializers.HyperlinkedModelSerializer):
