@@ -49,14 +49,26 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware', #csrf
+    # 'django.middleware.csrf.CsrfViewMiddleware',  # csrf
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # CORS
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+
+    # test
+    # 'func.disable.DisableCSRF',
 ]
+
+
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         # 'rest_framework.authentication.TokenAuthentication',
+#         # 'rest_framework.authentication.SessionAuthentication',
+#         # 'rest_framework.authentication.BasicAuthentication',
+#     ]
+# }
 
 ROOT_URLCONF = 'bbc.urls'
 
@@ -191,6 +203,7 @@ CORS_ALLOW_CREDENTIALS = True
 # SESSION_COOKIE_SAMESITE = None
 # CSRF_COOKIE_SAMESITE = None
 # CSRF_TRUSTED_ORIGINS = ['127.0.0.1:3000']
+CSRF_COOKIE_SECURE = True
 
 
 # DataFlair

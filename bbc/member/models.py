@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 class Group(models.Model):
     class Meta:
         db_table = 'group'
-    group = models.CharField(max_length=100, unique=True)
+    group_name = models.CharField(max_length=100, unique=True)
     header = models.ForeignKey(
         'Member', on_delete=models.CASCADE)
     outside_detail = models.CharField(max_length=500)
@@ -21,8 +21,8 @@ class Group(models.Model):
 class GroupMember(models.Model):
     class Meta:
         db_table = 'group_member'
-    group = models.ForeignKey(
-        Group, on_delete=models.CASCADE)
+    group_name = models.ForeignKey(
+        Group, on_delete=models.CASCADE, to_field='group_name', null=True)
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE)
     on_court = models.BooleanField(default=False)
@@ -37,7 +37,7 @@ class Member(User):
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10)
     mygroup = models.ForeignKey(
-        Group, on_delete=models.SET_NULL, null=True)
+        Group, on_delete=models.SET_NULL, null=True, to_field='group_name')
     # 0 = member, 1 = header, 2 = creating(header), 3 = joining(member who join group)
     group_role = models.IntegerField(null=True)
 
@@ -54,3 +54,21 @@ class RequestMember(models.Model):  # for create, join, change header notificati
     action = models.IntegerField(default=None)
     # change to True when action that request
     state = models.BooleanField(default=False)
+    # count are count when member accept creste group request
+    count = models.IntegerField(default=0)
+
+
+class Request(models.Model):
+
+    class Meta:
+        db_table = 'request'
+    sender = models.ForeignKey(
+        Member, on_delete=models.CASCADE, to_field='username', related_name='sender')
+    receiver = models.ForeignKey(
+        Member, on_delete=models.CASCADE, to_field='username', related_name='receiver')
+    # when request to create group = 0, join = 1, change header = 2
+    action = models.IntegerField(default=None)
+    # change to True when action that request
+    state = models.BooleanField(default=False)
+    # count are count when member accept creste group request
+    count = models.IntegerField(default=0)

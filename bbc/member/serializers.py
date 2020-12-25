@@ -7,3 +7,10 @@ class MemberSerializer(serializers.ModelSerializer):
         model = models.Member
         fields = ('username', 'first_name', 'last_name',
                   'email', 'tel', 'birthday', 'gender', 'mygroup')
+
+
+# class RequestSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = models.Request
+#         fields = ('sender', 'action', 'state',
+#                   'email', 'tel', 'birthday', 'gender', 'mygroup')

@@ -22,6 +22,16 @@ class MemberViewSet(viewsets.ModelViewSet):
     serializer_class = s.MemberSerializer
 
 
+class RequestMemberViewSet(viewsets.ModelViewSet):
+    queryset = mem_models.RequestMember.objects.all().order_by('id')
+    serializer_class = s.RequestMemberSerializer
+
+
+class RequestViewSet(viewsets.ModelViewSet):
+    queryset = mem_models.Request.objects.all().order_by('id')
+    serializer_class = s.RequestSerializer
+
+
 class CheckPaymentViewSet(viewsets.ModelViewSet):
     queryset = bk_models.CheckPayment.objects.all().order_by('id')
     serializer_class = s.CheckPaymentSerializer
@@ -50,11 +60,6 @@ class HistoryMemberViewSet(viewsets.ModelViewSet):
 class HistoryGroupViewSet(viewsets.ModelViewSet):
     queryset = bk_models.HistoryGroup.objects.all().order_by('id')
     serializer_class = s.HistoryGroupSerializer
-
-
-class RequestMemberViewSet(viewsets.ModelViewSet):
-    queryset = mem_models.RequestMember.objects.all().order_by('id')
-    serializer_class = s.RequestMemberSerializer
 
 
 class RefundViewSet(viewsets.ModelViewSet):

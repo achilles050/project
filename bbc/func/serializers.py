@@ -6,34 +6,40 @@ from booking import models as bk_models
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = mem_models.Group
-        fields = ('group', 'header', 'outside_detail', 'inside_detail',
+        fields = ('id', 'group_name', 'header', 'outside_detail', 'inside_detail',
                   'is_continue', 'is_active')
 
 
 class GroupMemberSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = mem_models.GroupMember
-        fields = ('group', 'member', 'on_court')
+        fields = ('id', 'group_name', 'member', 'on_court')
 
 
 class MemberSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = mem_models.Member
-        fields = ('username', 'first_name', 'last_name',
+        fields = ('id', 'username', 'first_name', 'last_name',
                   'email', 'password', 'tel', 'birthday', 'gender', 'mygroup')
 
 
 class RequestMemberSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = mem_models.RequestMember
-        fields = ('header', 'member', 'action', 'state')
+        fields = ('id', 'header', 'member', 'action', 'state', 'count')
+
+
+class RequestSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = mem_models.Request
+        fields = ('id', 'sender', 'receiver', 'action', 'state', 'count')
 
 
 class CheckPaymentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = bk_models.CheckPayment
-        fields = ('history', 'ref1', 'ref2',
-                  'pay', 'state', 'is_found')
+        fields = ('history_guest', 'history_member', 'history_group', 'transection',
+                  'amount', 'state', 'is_found')
 
 
 class CourtDetailSerializer(serializers.HyperlinkedModelSerializer):
@@ -54,20 +60,21 @@ class HistoryGuestSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = bk_models.HistoryGuest
         fields = ('id', 'guest_name', 'court', 'date_time',
-                  'pay', 'guest_email', 'guest_tel', 'receipt')
+                  'pay', 'guest_email', 'guest_tel', 'receipt', 'timestamp')
 
 
 class HistoryMemberSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = bk_models.HistoryMember
         fields = ('id', 'username', 'court', 'date_time',
-                  'price_normal', 'total_ds', 'pay', 'state', 'receipt')
+                  'price_normal', 'total_ds', 'pay', 'state', 'receipt', 'timestamp')
 
 
 class HistoryGroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = bk_models.HistoryGroup
-        fields = ('header', 'court', 'day', 'time')
+        fields = ('header', 'court', 'day', 'time', 'price_normal',
+                  'total_ds', 'pay', 'state', 'receipt', 'timestamp')
 
 
 class RefundSerializer(serializers.HyperlinkedModelSerializer):

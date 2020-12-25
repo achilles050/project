@@ -7,6 +7,7 @@ router.register(r'Group', views.GroupViewSet)
 router.register(r'GroupMember', views.GroupMemberViewSet)
 router.register(r'Member', views.MemberViewSet)
 router.register(r'RequestMember', views.RequestMemberViewSet)
+router.register(r'Request', views.RequestViewSet)
 
 router.register(r'CheckPayment', views.CheckPaymentViewSet)
 router.register(r'CourtDetail', views.CourtDetailViewSet)

@@ -1,22 +1,38 @@
-from django.shortcuts import render
 from . import models
 from booking import models as booking_models
 from .serializers import MemberSerializer
+from .form import LoginForm
+
+from datetime import date
+import json
+
+from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt  # csrf_clear
 from django.contrib.auth import authenticate, login, logout, get_user
 from django.http.response import JsonResponse
+
+from django.views import View
+from django.views.generic import ListView
+from django.views.generic.detail import DetailView
+
+from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
-from datetime import date
-from .form import LoginForm
-import json
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from rest_framework.authentication import BasicAuthentication as b
+from rest_framework.authentication import SessionAuthentication as s
+from func.disable import CsrfExemptSessionAuthentication as c
+
+# from braces.views import CsrfExemptMixin
+
 # Create your views here.
 
 
+@api_view(['GET', 'POST'])
 def Index(request):
     print('hi')
     user = get_user(request)
@@ -101,7 +117,7 @@ def Login(request):
         return HttpResponse('try again2!!!')
 
 
-# @ login_required(login_url='/login/')
+# @login_required(login_url='/login/')
 def Profile(request):
     try:
         print(request.user)
@@ -131,38 +147,22 @@ def Logout(request):
         print(e)
 
 
-@api_view(['GET', 'POST'])
-def test(request):
-    if request.method == 'POST':
-        Member.objects.all()
-
-
 # @login_required(login_url='/login/')
 def Listgroup(request):
     try:
         query = models.Group.objects.filter(is_active=True)
-        print(query)
         mydict = list()
-        print('pass1')
         for key, value in enumerate(query):
-            print('key = ', key)
-            print('value = ', value)
-            innerquery = models.GroupMember.objects.filter(group=value.id)
+            innerquery = models.GroupMember.objects.filter(group_name=value.id)
             # print(innerquery.objects.all())
-            mydict.append({'group': value.group,
+            mydict.append({'group': value.group_name,
                            'header': value.header.username,
                            'detail': value.outside_detail,
                            'allmember': [i.member.username for i in innerquery],
                            'history': 'Not yet',
                            })
-        print('pass2')
-        print(mydict[0]['allmember'][0])
-        print(len(mydict))
-        print('pass3')
-        print('mydict = ', mydict[0])
-        print('pass4')
-        return JsonResponse(json.dumps(mydict))
-        # return HttpResponse(json.dumps(mydict), content_type='application/json')
+        # return JsonResponse(json.dumps(mydict))
+        return HttpResponse(json.dumps(mydict), content_type='application/json')
     except Exception as e:
         print(e)
         return HttpResponse('error')
@@ -227,3 +227,69 @@ def Creategroup(request):
     except Exception as e:
         print(e)
         return JsonResponse({'message': 'error'})
+
+
+# class Request(View):
+
+#     @api_view(['GET', 'POST'])
+#     def get(self, request):
+#         # try:
+#         d = request.data
+#         return HttpResponse('Thsi is get method')
+#         # except:
+#         # return HttpResponse('Thsi is get method Error')
+
+#     def post(self, request):
+#         return HttpResponse('Thsi is post method')
+
+
+class Request(APIView):
+    authentication_classes = (b, c)
+
+    def get(self, request):
+        try:
+            if request.user.id is not None:
+                print(request.user)
+                print(models.Request.objects.filter(receiver=request.user))
+                query = models.Request.objects.filter(receiver=request.user)
+                mydict = list()
+                for i in query:
+                    mydict.append(
+                        {'sender': i.sender.username, 'action': i.action})
+                print(mydict)
+                # return HttpResponse(json.dumps(mydict), content_type='application/json')
+                # return HttpResponse('<html> <head> </head> <body> <button type="submit" formmethod="POST"> Click Me!</button> </body> </html>')
+                return HttpResponse('<html> <head> </head> <body> <form method="POST" action="/test/">{% csrf_token %}<button type="submit" >Continue</button></form> </body> </html>')
+            return HttpResponse('Pls login (GET)')
+        except Exception as e:
+            print('error = ', e)
+            return HttpResponse('Error (GET)')
+
+    # @csrf_exempt
+    def post(self, request):
+        try:
+            print(request.user)
+            # if request.user.id is not None:
+            #     myid = request.data['id']
+            #     action = request.data['action']
+            #     if action == 0:
+            #         pass
+            return HttpResponse('Ok (POST)')
+
+        except Exception as e:
+            print('error = ', e)
+            return HttpResponse('Error (POST)')
+
+
+@api_view(['GET', 'POST'])
+@csrf_exempt
+def testget(request):
+    try:
+        print(request.user)
+        if request.method == 'GET':
+            return HttpResponse('OK (GET)')
+        if request.method == 'POST':
+            return HttpResponse('OK (POST)')
+    except Exception as e:
+        print(e)
+        return HttpResponse('Error')
