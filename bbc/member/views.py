@@ -23,12 +23,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from rest_framework.authentication import BasicAuthentication as b
-from rest_framework.authentication import SessionAuthentication as s
-from func.disable import CsrfExemptSessionAuthentication as c
-
-# from braces.views import CsrfExemptMixin
-
 # Create your views here.
 
 
@@ -244,7 +238,6 @@ def Creategroup(request):
 
 
 class Request(APIView):
-    authentication_classes = (b, c)
 
     def get(self, request):
         try:
@@ -282,7 +275,6 @@ class Request(APIView):
 
 
 @api_view(['GET', 'POST'])
-@csrf_exempt
 def testget(request):
     try:
         print(request.user)

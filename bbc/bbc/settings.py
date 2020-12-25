@@ -62,13 +62,14 @@ MIDDLEWARE = [
 ]
 
 
-# REST_FRAMEWORK = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': [
-#         # 'rest_framework.authentication.TokenAuthentication',
-#         # 'rest_framework.authentication.SessionAuthentication',
-#         # 'rest_framework.authentication.BasicAuthentication',
-#     ]
-# }
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'rest_framework.authentication.TokenAuthentication',
+        # 'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'func.disable.CsrfExemptSessionAuthentication',
+    ]
+}
 
 ROOT_URLCONF = 'bbc.urls'
 
