@@ -80,7 +80,7 @@ class HistoryGroupSerializer(serializers.HyperlinkedModelSerializer):
 class RefundSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = bk_models.Refund
-        fields = ('history', 'detail', 'state')
+        fields = ('history_member', 'history_group', 'detail', 'state')
 
 
 class StatusSerializer(serializers.HyperlinkedModelSerializer):

@@ -22,12 +22,15 @@ class GroupMember(models.Model):
     class Meta:
         db_table = 'group_member'
     group_name = models.ForeignKey(
-        Group, on_delete=models.CASCADE, to_field='group_name', null=True)
+        Group, on_delete=models.CASCADE, to_field='group_name', null=True, related_name='group')
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE)
     on_court = models.BooleanField(default=False)
     # # for show role in group h = header, m = member, j = join, q = quite
     # role = models.CharField(max_length=1, default='m')
+
+    def __str__(self):
+        return self.member.username
 
 
 class Member(User):
@@ -38,8 +41,8 @@ class Member(User):
     gender = models.CharField(max_length=10)
     mygroup = models.ForeignKey(
         Group, on_delete=models.SET_NULL, null=True, to_field='group_name')
-    # 0 = member, 1 = header, 2 = creating(header), 3 = joining(member who join group)
     group_role = models.IntegerField(null=True)
+    test = models.CharField(max_length=5, null=True)
 
     def __str__(self):
         return self.username

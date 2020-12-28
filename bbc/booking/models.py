@@ -65,7 +65,7 @@ class HistoryMember(models.Model):
     class Meta:
         db_table = 'history_member'
     username = models.ForeignKey(
-        Member, on_delete=models.CASCADE)
+        Member, on_delete=models.CASCADE, related_name='history_member')
     court = models.ForeignKey(
         CourtDetail, on_delete=models.CASCADE, to_field='court_number')
     date_time = models.DateTimeField()
@@ -83,7 +83,7 @@ class HistoryGroup(models.Model):
     class Meta:
         db_table = 'history_group'
     header = models.ForeignKey(
-        Group, on_delete=models.CASCADE)
+        Group, on_delete=models.CASCADE, related_name='history_group')
     court = models.ForeignKey(
         CourtDetail, on_delete=models.CASCADE, to_field='court_number')
     day = models.DecimalField(max_digits=1, decimal_places=0)
@@ -101,8 +101,10 @@ class HistoryGroup(models.Model):
 class Refund(models.Model):
     class Meta:
         db_table = 'refund'
-    history = models.ForeignKey(
-        HistoryMember, on_delete=models.CASCADE)
+    history_member = models.ForeignKey(
+        HistoryMember, on_delete=models.CASCADE, null=True)
+    history_group = models.ForeignKey(
+        HistoryGroup, on_delete=models.CASCADE, null=True)
     detail = models.CharField(max_length=20)
     # change when refund success by admin
     state = models.BooleanField(default=False)
