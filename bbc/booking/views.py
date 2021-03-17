@@ -1,30 +1,90 @@
 import json
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from datetime import datetime, time, timedelta
+
 from . import models
-from member.models import Member
+from . import book
+
+from member import models as mem_models
+from . import serializers as b_s
+
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user
-from datetime import time
-from . import book
+from django.http.response import JsonResponse
+from django.core import serializers
+from django.forms.models import model_to_dict
+from django.core.serializers.json import DjangoJSONEncoder
+
+from rest_framework.views import APIView
 # Create your views here.
 
 
-# @login_required(login_url='/login/')
-def court_status(request):
-    query = models.Status.objects.all()
-    mydict = list()
-    for i in query:
-        mydict.append({'court': i.court.court_number,
-                       'name': i.name,
-                       'time': i.time.hour
-                       })
-    return HttpResponse(json.dumps(mydict), content_type='application/json')
+class booking(APIView):
+    def get(self, request):  # query status court
+        if not models.OtherDetail.objects.get(pk=1).force_close:
+            status_q = models.Status.objects.all()
+            time_q = models.OtherDetail.objects.get(pk=1)
+            time_open = time_q.time_open.hour
+            time_close = time_q.time_close.hour
+            time = range(time_open, time_close)
+            court_list = models.CourtDetail.objects.values_list(
+                "court_number", flat=True)
+
+            l = list()
+            for i, t in enumerate(time):
+                str_time = str('%02d:00' % t+'-'+'%02d:00' % (t+1))
+                l.append({'time': str_time})
+                for c in court_list:
+                    str_court = 'Court'+str(c)
+                    if book.check_valid(court=c, yourtime=t):
+                        l[i][str_court] = True
+                    else:
+                        l[i][str_court] = False
+            data = dict({'status': l})
+        else:
+            data = dict({'data': 'close'})
+
+        return JsonResponse(data)
+
+    def post(self, request):  # book court
+        court = int(request.data['court'])
+        yourtime = int(request.data['time'])
+        name = 'guest'  # request.data['name']
+        now = datetime.now()
+        time_out = (now + timedelta(minutes=1)).time()
+
+        if request.user.id is not None:
+            name = request.user.first_name
+            time_out = (now + timedelta(minutes=10)).time()
+
+        if book.check_valid(court=court, yourtime=yourtime):
+            obj, created = models.Status.objects.get_or_create(
+                court=models.CourtDetail.objects.get(court_number=court),
+                name=name, time=time(yourtime),
+                time_out=time_out)
+            if created:
+                return JsonResponse({'success': True})
+
+        return JsonResponse({'success': False})
 
 
-def booking(request):
+def testcourt(request):
+    d = dict()
+    d['data'] = '4546'
+    return JsonResponse(d)
+
+    book.court(1)
+    return HttpResponse('ok')
+
+
+def mybooking(request):
+
     try:
-        member = get_user(request)
+
+        member = mem_models.Member.objects.get(pk=request.user.pk)
+        # member = get_object_or_404(mem_models.Member, id=request.user.pk)
+        print(type(member))
         print(member)
         state = False
         if request.method == 'POST':
@@ -47,7 +107,7 @@ def booking(request):
 def confirm(request):
     try:
         member = get_user(request)
-        query = Member.objects.get(username=member)
+        query = mem_models.Member.objects.get(username=member)
         # booking in status models and historymember
     except Exception as e:
         if e == 'error':

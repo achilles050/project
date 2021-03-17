@@ -2,6 +2,7 @@ from . import models
 from booking import models as booking_models
 from . import serializers as s
 from .form import LoginForm
+from . import token
 
 from datetime import date
 import json
@@ -23,10 +24,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.shortcuts import get_object_or_404
+
 # Create your views here.
 
 
-# @csrf_exempt
 @api_view(['GET', 'POST'])
 def Index(request):
     print(f'Index {request.user}')
@@ -37,34 +39,38 @@ def Index(request):
         return HttpResponse('hi guest!!!')
 
 
+@api_view(['GET', 'POST', 'PUT'])
 def Register(request):
     if request.method == 'POST':
-        my_data = JSONParser().parse(request)
-        print(my_data)
-        username = my_data['username']
-        password = my_data['password']
-        firstname = my_data['firstname']
-        lastname = my_data['lastname']
-        email = my_data['email']
-        tel = '00000221'
-        birthday = '1999/03/15'
-        gender = 'male'
+        username = request.data['username']
+        password = request.data['password']
+        firstname = request.data['firstname']
+        lastname = request.data['lastname']
+        email = request.data['email']
+        tel = '00000221'  # request.data['tel']
+        birthday = '1999/03/15'  # request.data['birthday']
+        gender = 'male'  # request.data['gender']
+
+        # my_data = JSONParser().parse(request)
+
         try:
-            b = birthday.split('/')
-            birth = date(int(b[0]), int(b[1]), int(b[2]))
-            print(birth)
-            regis = models.Member.objects.create_user(
-                username=username, password=password, email=email)
-            regis.first_name = firstname
-            regis.last_name = lastname
-            regis.tel = tel
-            print('before')
-            regis.birthday = birth
-            print('pass')
-            regis.gender = gender
-            regis.save()
-            print('Register Success')
-            return HttpResponse("Register Success")
+            if not models.Member.objects.filter(email=email).exists():
+                b = birthday.split('/')
+                birth = date(int(b[0]), int(b[1]), int(b[2]))
+                print(birth)
+                regis = models.Member.objects.create_user(
+                    username=username, password=password, email=email)
+                regis.first_name = firstname
+                regis.last_name = lastname
+                regis.tel = tel
+                regis.birthday = birth
+                regis.gender = gender
+                # regis.is_active = False
+                regis.save()
+                print('Register Success')
+                return HttpResponse("Register Success")
+            else:
+                return HttpResponse("Email does exists")
 
         except Exception as e:
             print('Error !!! >>> ', e)
@@ -78,18 +84,13 @@ def Register(request):
 def Login(request):
     try:
         if request.method == 'POST':
-            print('method = POST')
-            username = request.data['username']
-            password = request.data['password']
-            print('recieved data')
             user_login = authenticate(
-                request, username=username, password=password)
+                request, username=request.data['username'], password=request.data['password'])
+            print('my test = ', user_login)
+            print('test = ', user_login.pk)
             if user_login is not None:
                 login(request, user_login)
-                print("You're login now")
                 session = request.session._session_key
-                print('session key : ', session)
-                print('username : ', request.user)
                 member = models.Member.objects.get(pk=request.user.id)
                 mem_serializer = s.MemberSerializer(member)
                 # return JsonResponse(mem_serializer, safe=False)
@@ -121,20 +122,50 @@ def Logout(request):
         print(e)
 
 
+def Test(request):
+    try:
+        user = get_object_or_404(models.Member, username='thorn')
+        mytoken1 = token.account_activation_token.make_token(user)
+        print(user)
+        print(mytoken1)
+        print(type(mytoken1))
+        print(token.account_activation_token.check_token(user, mytoken1))
+
+        mytoken2 = token.default_token_generator.make_token(user)
+        print(user)
+        print(mytoken2)
+        print(type(mytoken2))
+        print(token.default_token_generator.check_token(user, mytoken2))
+
+        return HttpResponse('ok', status=200)
+    except Exception as e:
+        print(f'Error = {e}')
+        return HttpResponse('error')
+
+
 class Profile(APIView):
     def get(self, request):
         try:
-            print(f'This is {request.user} profile')
-            member = models.Member.objects.get(pk=request.user.id)
-            mem_serializer = s.MemberSerializer(member)
-            return JsonResponse(mem_serializer.data, safe=False)
+            if request.user.id is not None:
+                print(f'This is {request.user} profile')
+                member = models.Member.objects.get(pk=request.user.id)
+                mem_serializer = s.MemberSerializer(member)
+                return JsonResponse(mem_serializer.data, safe=False)
+            return JsonResponse({'message': 'Pls login. (GET)'}, safe=False)
         except Exception as e:
             print(f'Error {e}')
-            pass
+            return JsonResponse({'message': 'Error(GET)'}, safe=False)
 
-    def post(self, request):
+    def put(self, request):
         try:
-            return JsonResponse({'message': 'OK (POST)'}, safe=False)
+            if request.user.id is not None:
+                member_obj = models.Member.objects.get(pk=request.user.id)
+                mem_serializer = s.MemberSerializer(
+                    member_obj, data=request.data)
+                if mem_serializer.is_valid():
+                    mem_serializer.save()
+                    return JsonResponse(mem_serializer.data, safe=False)
+                return JsonResponse({'message': 'NOT CHANGE (POST)'}, safe=False)
         except Exception as e:
             print(f'Error {e}')
             return JsonResponse({'message': 'Error(POST)'}, safe=False)
@@ -145,6 +176,7 @@ class Listgroup(APIView):
         try:
             query = models.Group.objects.filter(is_active=True)
             s_query = s.ListgroupSerializer(query, many=True)
+            print(type(s_query.data))
             return JsonResponse(s_query.data, safe=False)
         except Exception as e:
             print(f'Error {e}')
@@ -354,7 +386,7 @@ class Request(APIView):
             return HttpResponse('Error (POST)')
 
 
-@api_view(['GET', 'POST'])
+@ api_view(['GET', 'POST'])
 def testget(request):
     try:
         print(request.user)

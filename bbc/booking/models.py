@@ -114,13 +114,15 @@ class Status(models.Model):
     class Meta:
         db_table = 'status'
     court = models.ForeignKey(
-        CourtDetail, on_delete=models.CASCADE)
+        CourtDetail, on_delete=models.CASCADE, related_name='court_num')
     name = models.CharField(max_length=50)
     time = models.TimeField()
+    time_out = models.TimeField(default=None)
 
-    def __str__(self):
-        mystr = self.court+' '+self.name+' '+self.time+'\n'
-        return mystr
+    # def __str__(self):
+    #     mystr = str(self.court.court_number)+' ' + \
+    #         self.name+' '+str(self.time.hour)
+    #     return mystr
 
 
 # show in admin only to show refund require from booked page

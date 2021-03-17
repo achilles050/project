@@ -86,7 +86,7 @@ class RefundSerializer(serializers.HyperlinkedModelSerializer):
 class StatusSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = bk_models.Status
-        fields = ('court', 'name', 'time')
+        fields = ('court', 'name', 'time', 'time_out')
 
 # class PriceSerializer(serializers.HyperlinkedModelSerializer):
 #     class Meta:

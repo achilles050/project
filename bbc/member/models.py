@@ -44,8 +44,8 @@ class Member(User):
     group_role = models.IntegerField(null=True)
     test = models.CharField(max_length=5, null=True)
 
-    def __str__(self):
-        return self.username
+    # def __str__(self):
+    #     return self.username
 
 
 class RequestMember(models.Model):  # for create, join, change header notification

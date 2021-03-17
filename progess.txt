@@ -1,4 +1,0 @@
-add api
-        - list group at /listgroup/
-        - mygroup at /mygroup/
-        - create group at /creategroup/ (almost finish)

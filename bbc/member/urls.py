@@ -15,4 +15,5 @@ urlpatterns = [
     path('creategroup/', views.Creategroup.as_view()),
     path('test/', views.Request.as_view()),
     path('test2/', views.testget),
+    path('mytest/', views.Test),
 ]

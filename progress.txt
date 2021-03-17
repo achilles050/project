@@ -1,0 +1,32 @@
+finish
+        - list group
+        - mygroup at /mygroup/
+        - create group at /creategroup/ (almost finish)
+
+all
+
+member
+        - profile //get for show detail a member //put for edit about profile detail
+
+group
+        - listgroup //get for list all group //post for create group
+        - mygroup //get for list detail in a group (history) //post for join group //put for edit detail group //delete for leave group
+
+request
+        - request //get for show all request each member //post for action a request
+
+history
+        - history //get for show history //put for refund
+
+booking
+        - gbooking //get for show available court in each time //post for booking court in status and history(state=0)
+        - booking //get for show available court in each time //post for booking court in status and history(state=0)
+        - confirm //show qrcode prompt pay //post for confirm booking in status(maybe send history id?)
+
+register
+        - register //post register new user
+        - >>> create confirm email, forgot password <<<
+        
+
+admin
+        - 
