@@ -57,6 +57,7 @@ class HistoryGuest(models.Model):
     pay = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     guest_email = models.EmailField()
     guest_tel = models.CharField(max_length=10)
+    state = models.IntegerField(default=0)
     receipt = models.CharField(max_length=32, null=True)
     timestamp = models.DateTimeField(auto_now=True)
 
@@ -118,6 +119,7 @@ class Status(models.Model):
     name = models.CharField(max_length=50)
     time = models.TimeField()
     time_out = models.TimeField(default=None)
+    receipt = models.CharField(max_length=32, null=True)
 
     # def __str__(self):
     #     mystr = str(self.court.court_number)+' ' + \

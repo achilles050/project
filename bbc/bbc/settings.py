@@ -43,6 +43,11 @@ INSTALLED_APPS = [
     'func',
     'member',
     'booking',
+    'django_crontab',
+]
+
+CRONJOBS = [
+    ('*/20 * * * *', 'func.cron.my_scheduled_job')
 ]
 
 MIDDLEWARE = [

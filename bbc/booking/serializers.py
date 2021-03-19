@@ -12,3 +12,10 @@ class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Status
         fields = ('court_id', 'court_num',  'name', 'time', 'time_out')
+
+
+class CourtDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.CourtDetail
+        fields = ('court_number', 'price_normal', 'price_ds_mem',
+                  'price_ds_time', 'time_ds_start', 'time_ds_end')
