@@ -57,6 +57,7 @@ class HistoryGuest(models.Model):
     pay = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     guest_email = models.EmailField()
     guest_tel = models.CharField(max_length=10)
+    # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
     state = models.IntegerField(default=0)
     receipt = models.CharField(max_length=32, null=True)
     timestamp = models.DateTimeField(auto_now=True)

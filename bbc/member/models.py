@@ -25,12 +25,9 @@ class GroupMember(models.Model):
         Group, on_delete=models.CASCADE, to_field='group_name', null=True, related_name='group')
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE)
+    # for show role in group h = header, m = member
+    role = models.CharField(max_length=1, default='m')
     on_court = models.BooleanField(default=False)
-    # # for show role in group h = header, m = member, j = join, q = quite
-    # role = models.CharField(max_length=1, default='m')
-
-    def __str__(self):
-        return self.member.username
 
 
 class Member(User):
@@ -39,10 +36,10 @@ class Member(User):
     tel = models.CharField(max_length=10)
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10)
-    mygroup = models.ForeignKey(
-        Group, on_delete=models.SET_NULL, null=True, to_field='group_name')
-    group_role = models.IntegerField(null=True)
-    test = models.CharField(max_length=5, null=True)
+    # mygroup = models.ForeignKey(
+    #     Group, on_delete=models.SET_NULL, null=True, to_field='group_name')
+    # group_role = models.IntegerField(null=True)
+    # test = models.CharField(max_length=5, null=True)
 
     # def __str__(self):
     #     return self.username

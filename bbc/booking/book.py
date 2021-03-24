@@ -25,31 +25,6 @@ def check_valid(court, yourtime):  # time in hour unit
         return None
 
 
-def court():
-    try:
-        # number = models.CourtDetail.objects.all()
-        number = models.CourtDetail.objects.values("court_number")
-        print(type(number))
-        # print(number.count())
-        print(number)
-        court = list()
-        # court.append({}) for i in
-        print('\n')
-
-        time = models.OtherDetail.objects.values("time_open", "time_close")
-        print(time)
-        print(type(time[0]['time_open']))
-        print(time[0]['time_open'])
-        # print(time_open[0]["time_open"].hour)
-        # print('%02d' % time_open[0]["time_open"].hour)
-        for i in number:
-            print(type(i["court_number"]), ' ', i["court_number"])
-            print('%02d' % i["court_number"])
-
-    except Exception as e:
-        print(f'Error !!! {e}')
-
-
 def booking(member, court, yourtime):
     try:
         t = time(int(yourtime))

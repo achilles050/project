@@ -42,81 +42,129 @@ class booking(APIView):
                     else:
                         l[i][str_court] = False
             data = dict({'status': l})
+            q_courtdetail = models.CourtDetail.objects.all()
+            s_courtdetail = serializers.CourtDetailSerializer(
+                q_courtdetail, many=True)
+            data['court_detail'] = s_courtdetail.data
+            return JsonResponse(data)
         else:
-            data = dict({'data': 'close'})
-
-        q_courtdetail = models.CourtDetail.objects.all()
-        s_courtdetail = serializers.CourtDetailSerializer(
-            q_courtdetail, many=True)
-        data['court_detail'] = s_courtdetail.data
-
-        return JsonResponse(data)
+            return JsonResponse({'status': 'close'})
 
     def post(self, request):  # book court
-        court = int(request.data['court'])
-        yourtime = int(request.data['time'])
-        now = datetime.now()
-        dt_booked = datetime.combine(now.date(), time(yourtime))
-        duration_tm = 10 if request.user.id is not None else 1
-        time_out = (now + timedelta(minutes=duration_tm)).time()
-        name = request.user.first_name if request.user.id is not None else 'guest'
+        booking = request.data['arr']
+        status_obj_list = []
+        history_obj_list = []
+        normal_price = 0
+        ds_time = 0
+        ds_mem = 0
 
         if request.user.id is None:
-            guest_email = 'guest@email.com'
-            guest_tel = '0800000000'
+            # guest = request.data['guest']
+            name = request.data['name']  # guest['name']
+            guest_email = request.data['email']  # guest['email']
+            guest_tel = request.data['phone']  # guest['tel']
+            duration_minute = 1
+        else:
+            duration_minute = 10
+            name = request.user.first_name
 
-        if book.check_valid(court=court, yourtime=yourtime):
-            q_court = models.CourtDetail.objects.get(court_number=court)
-            pay = q_court.price_normal
-            dis_mem = q_court.price_ds_mem
-            dis_time = q_court.price_ds_time
-            dis_time_start = q_court.time_ds_start.hour
-            dis_time_end = q_court.time_ds_end.hour
+        date_now = datetime.now().date()
+        time_out = (datetime.now() + timedelta(minutes=duration_minute)).time()
 
-            status_obj, status_created = models.Status.objects.get_or_create(
-                court=q_court, name=name, time=time(yourtime),
-                time_out=time_out)
+        for value in booking:
+            court = int(value['court'][5:])
+            yourtime = int(value['time'][:2])
+            dt_booked = datetime.combine(date_now, time(yourtime))
+            receipt = uuid4().hex
 
-            if request.user.id is not None:
-                q_member = models.Member.objects.get(username=request.user)
-                if not yourtime in range(dis_time_start, dis_time_end):
+            if book.check_valid(court=court, yourtime=yourtime):
+                q_court = models.CourtDetail.objects.get(court_number=court)
+                pay = q_court.price_normal
+                dis_mem = q_court.price_ds_mem
+                dis_time = q_court.price_ds_time
+                dis_time_start = q_court.time_ds_start.hour
+                dis_time_end = q_court.time_ds_end.hour
+
+                status_obj, status_created = models.Status.objects.get_or_create(
+                    court=q_court, name=name, time=time(yourtime),
+                    time_out=time_out, receipt=receipt)
+
+                if not yourtime in range(int(dis_time_start), int(dis_time_end)):
+                    print(yourtime)
+                    print(dis_mem)
+                    print(dis_time)
                     dis_time = 0
 
-                history_obj, history_create = model.HistoryMember.objects.get_or_create(
-                    username=q_member, court=q_court, price_normal=normal_price,
-                    total_ds=dis_time+dis_mem, pay=pay-dis_time-dis_mem,
-                    date_time=datetime.combine(now.date(), time(yourtime)),
-                    receipt=uuid4().hex)
-            else:
-                history_obj, history_create = models.HistoryGuest.objects.get_or_create(
-                    guest_name=name, court=q_court,
-                    date_time=datetime.combine(now.date(), time(yourtime)),
-                    pay=pay, guest_email=guest_email, guest_tel=guest_tel,
-                    receipt=uuid4().hex)
+                if request.user.id is not None:
+                    q_member = models.Member.objects.get(username=request.user)
+                    history_obj, history_create = models.HistoryMember.objects.get_or_create(
+                        username=q_member, court=q_court, price_normal=normal_price,
+                        total_ds=dis_time+dis_mem, pay=pay-dis_time-dis_mem,
+                        date_time=dt_booked, receipt=receipt)
+                else:
+                    dis_mem = 0
+                    history_obj, history_create = models.HistoryGuest.objects.get_or_create(
+                        guest_name=name, court=q_court,
+                        date_time=dt_booked, pay=pay, guest_email=guest_email, guest_tel=guest_tel,
+                        receipt=receipt)
 
-            if status_created and history_create:
-                status_obj.receipt = history_obj.receipt
-                status_obj.save()
-                return JsonResponse({'success': True, 'receipt': history_obj.receipt})
-            else:
-                status_obj.delete() if status_created else history_obj.delete()
+                if status_created and history_create:
+                    status_obj_list.append(status_obj)
+                    history_obj_list.append(history_obj)
+                    normal_price += pay
+                    ds_mem += dis_mem
+                    ds_time += dis_time
+                else:
+                    status_obj.delete() if status_created else history_obj.delete()
 
-        return JsonResponse({'success': False})
+        if len(booking) != len(status_obj_list):  # != len(history_obj_list):
+            print(len(booking))
+            print(len(status_obj_list))
+            print(len(history_obj_list))
+            if len(status_obj_list) != 0:
+                for value in status_obj_list:
+                    value.delete()
+            if len(history_obj_list) != 0:
+                for value in history_obj_list:
+                    value.delete()
+            return JsonResponse({'success': False})
+        else:
+            print(len(booking))
+            print(len(status_obj_list))
+            print(len(history_obj_list))
+            response_dict = dict()
+            response_dict['success'] = True
+            response_dict['receipt'] = [
+                value.receipt for value in history_obj_list]
+            response_dict['price'] = {}
+            response_dict['price']['normal_price'] = normal_price
+            response_dict['price']['discount_time'] = ds_time
+            response_dict['price']['discouht_member'] = ds_mem
+            return JsonResponse(response_dict)
+        return HttpResponse('??????')
 
 
 class confirm(APIView):
     def post(self, request):
-        receipt = request.data['receipt']
+        all_receipt = request.data['receipt']
+        history_obj_list = []
 
-        if models.HistoryMember.objects.filter(receipt=receipt).exists():
-            q_history = models.HistoryMember.objects.get(receipt=receipt)
+        for receipt in all_receipt:
+            if models.HistoryMember.objects.filter(receipt=receipt).filter(state=0).exists():
+                q_history = models.HistoryMember.objects.get(receipt=receipt)
 
-        elif models.HistoryGuest.objects.filter(receipt=receipt).exists():
-            q_history = models.HistoryGuest.objects.get(receipt=receipt)
-        else:
-            print('receipt error')
-            return JsonResponse({'message': 'error receipt nbt found'})
+            elif models.HistoryGuest.objects.filter(receipt=receipt).filter(state=0).exists():
+                q_history = models.HistoryGuest.objects.get(receipt=receipt)
+            else:
+                print('receipt error')
+                if len(history_obj_list) != 0:
+                    for value in history_obj_list:
+                        value.state = 0
+                return JsonResponse({'message': 'error receipt not found'})
+            q_history.state = 1
+            q_history.save()
+            print(history_obj_list)
+            print(type(history_obj_list))
+            history_obj_list.apppend(q_history)
 
-        q_history.state = 1
-        q_history.save()
         return JsonResponse({'message': 'confirm success'})

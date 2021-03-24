@@ -80,34 +80,19 @@ def Register(request):
         return HttpResponse('Try Again!!!')
 
 
-@api_view(['GET', 'POST'])
-def Login(request):
-    try:
-        if request.method == 'POST':
-            user_login = authenticate(
-                request, username=request.data['username'], password=request.data['password'])
-            print('my test = ', user_login)
-            print('test = ', user_login.pk)
-            if user_login is not None:
-                login(request, user_login)
-                session = request.session._session_key
-                member = models.Member.objects.get(pk=request.user.id)
-                mem_serializer = s.MemberSerializer(member)
-                # return JsonResponse(mem_serializer, safe=False)
-                return JsonResponse({'accessToken': session, 'username': member.username}, safe=False)
-                # return HttpResponse('ok!!!')
-            else:
-                # member = models.Member.objects.get(pk=request.user.id)
-                # mem_serializer = s.MemberSerializer(member)
-                # return JsonResponse(mem_serializer.data, safe=False)
-                return JsonResponse({'message': 'username or password not correct!!!'})
-                # return HttpResponse('try again!!!')
+class Login(APIView):
+    def get(self, request):
+        return render(request, 'login.html', {'form': LoginForm})
+
+    def post(self, request):
+        username = request.data['username']
+        password = request.data['password']
+        auth = authenticate(username=username, password=password)
+        if auth is not None:
+            login(request, auth)
+            return JsonResponse({'login successfully': f'HI {auth}'}, status=200)
         else:
-            return render(request, 'login.html', {'form': LoginForm})
-            # return HttpResponse('POST method only !!!')
-    except Exception as e:
-        print(e)
-        return HttpResponse('try again2!!!')
+            return JsonResponse({'message': 'try again'}, status=404)
 
 
 # @login_required(login_url='/login/')
@@ -116,10 +101,11 @@ def Logout(request):
         print('going to logout')
         logout(request)
         print('logouted')
-        return JsonResponse({'message': 'logout successfully'}, status=status.HTTP_200_OK)
+        return JsonResponse({'message': 'logout successfully'}, status=200)
         # return HttpResponse('ok logouted')
     except Exception as e:
         print(e)
+        return JsonResponse({'message': 'error'}, status=404)
 
 
 def Test(request):
@@ -177,7 +163,8 @@ class Listgroup(APIView):
             query = models.Group.objects.filter(is_active=True)
             s_query = s.ListgroupSerializer(query, many=True)
             print(type(s_query.data))
-            return JsonResponse(s_query.data, safe=False)
+            d = {'data': s_query.data}
+            return JsonResponse(d)
         except Exception as e:
             print(f'Error {e}')
             return JsonResponse({'message': 'Error(GET)'}, safe=False)
@@ -192,26 +179,28 @@ class Listgroup(APIView):
 
 
 class Mygroup(APIView):
-    def get(self, request):
+    def get(self, request, groupid):
         try:
-            mem = models.Member.objects.get(pk=request.user.id)
-            print(f'query member success = {mem.mygroup.group_name}')
-            query = models.GroupMember.objects.filter(
-                group_name=mem.mygroup.group_name).filter(member=request.user.id)  # .exists()
-            print('check groupmember success')
-            group = models.Group.objects.get(pk=mem.mygroup.id)
-            print('check group success')
-            print(f'query = {group}')
-            query = models.Group.objects.filter(is_active=True)
-            s_query = s.MygroupSerializer(group)
-            print(f's_query.data ={s_query.data}')
-            # return JsonResponse(s_query.data, safe=False)
-            t = models.GroupMember.objects.filter(
-                group_name=mem.mygroup.group_name)
-            ts = s.GroupmemberSerializer(t, many=True)
-            print(f't = {t}')
-            print(f'ts = {ts.data}')
-            return JsonResponse(ts.data, safe=False)
+            id_ = groupid
+            # mem = models.Member.objects.get(pk=request.user.id)
+            # print(f'query member success = {mem.mygroup.group_name}')
+            # query = models.GroupMember.objects.filter(
+            #     group_name=mem.mygroup.group_name).filter(member=request.user.id)  # .exists()
+            # print('check groupmember success')
+            # group = models.Group.objects.get(pk=mem.mygroup.id)
+            # print('check group success')
+            # print(f'query = {group}')
+            # query = models.Group.objects.filter(is_active=True)
+            # s_query = s.MygroupSerializer(group)
+            # print(f's_query.data ={s_query.data}')
+            # # return JsonResponse(s_query.data, safe=False)
+            # t = models.GroupMember.objects.filter(
+            #     group_name=mem.mygroup.group_name)
+            # ts = s.GroupmemberSerializer(t, many=True)
+            # print(f't = {t}')
+            # print(f'ts = {ts.data}')
+            # return JsonResponse(ts.data, safe=False)
+            return JsonResponse({'message': f'ok get {id_}'})
         except Exception as e:
             print(f'Error {e}')
             return JsonResponse({'message': 'Error(GET)'}, safe=False)
@@ -223,6 +212,40 @@ class Mygroup(APIView):
         except Exception as e:
             print(f'Error {e}')
             return JsonResponse({'message': 'Error(POST)'}, safe=False)
+
+
+# class Mygroup(APIView):
+#     def get(self, request):
+#         try:
+#             mem = models.Member.objects.get(pk=request.user.id)
+#             print(f'query member success = {mem.mygroup.group_name}')
+#             query = models.GroupMember.objects.filter(
+#                 group_name=mem.mygroup.group_name).filter(member=request.user.id)  # .exists()
+#             print('check groupmember success')
+#             group = models.Group.objects.get(pk=mem.mygroup.id)
+#             print('check group success')
+#             print(f'query = {group}')
+#             query = models.Group.objects.filter(is_active=True)
+#             s_query = s.MygroupSerializer(group)
+#             print(f's_query.data ={s_query.data}')
+#             # return JsonResponse(s_query.data, safe=False)
+#             t = models.GroupMember.objects.filter(
+#                 group_name=mem.mygroup.group_name)
+#             ts = s.GroupmemberSerializer(t, many=True)
+#             print(f't = {t}')
+#             print(f'ts = {ts.data}')
+#             return JsonResponse(ts.data, safe=False)
+#         except Exception as e:
+#             print(f'Error {e}')
+#             return JsonResponse({'message': 'Error(GET)'}, safe=False)
+
+#     def post(self, request):
+#         try:
+
+#             return JsonResponse({'message': 'OK (POST)'}, safe=False)
+#         except Exception as e:
+#             print(f'Error {e}')
+#             return JsonResponse({'message': 'Error(POST)'}, safe=False)
 
 
 # @login_required(login_url='/login/')
@@ -252,55 +275,11 @@ class Mygroup(APIView):
 #         return JsonResponse({'message': 'error'})
 
 
-# @csrf_exempt
-# @api_view(['GET', 'POST'])
-# def Creategroup(request):
-#     try:
-#         r = request.user.id
-#         #r = 10
-#         member1 = request.data['member1']
-#         member2 = request.data['member2']
-#         member3 = request.data['member3']
-#         group_name = request.data['group_name']
-#         models.Member.objects.get(pk=member1)
-#         models.Member.objects.get(pk=member2)
-#         models.Member.objects.get(pk=member3)
-#         print(models.Member.objects.get(pk=r).id)
-#         print(type(request.user.id))
-#         print(type(member1))
-#         print('ok check member in db success')
-#         if not models.Group.objects.filter(group_name=group_name).exists():
-#             print('1')
-#             print("let's create group")
-#             # print(models.Member.objects.get(pk=r))
-#             # print(type(models.Member.objects.get(pk=r)))
-#             # models.Group(group=group_name,
-#             #              header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in').save()
-#             # models.Group(group=group_name,
-#             #              header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in', is_active=True).save()
-#             # models.RequestMember(header=models.Group.objects.get(header=r),
-#             #                      member=models.Member.objects.get(pk=member1), action=0).save()
-#             # models.RequestMember(header=models.Group.objects.get(header=r),
-#             #                      member=models.Member.objects.get(pk=member2), action=0).save()
-#             # models.RequestMember(header=models.Group.objects.get(header=r),
-#             #                      member=models.Member.objects.get(pk=member3), action=0).save()
-#             mem_q = models.Member.objects.filter(is_active=True)
-#             print('q success')
-#             mem_s = s.CreateGroupMemberSerializer(mem_q, many=True)
-#             print('s success')
-#             print(mem_s.data)
-#             return JsonResponse(mem_s.data, safe=False)
-#             # return JsonResponse({'message': 'ok'})
-#         return JsonResponse({'message': 'group name is exists'})
-#     except Exception as e:
-#         print(e)
-#         return JsonResponse({'message': 'error'})
-
-
 class Creategroup(APIView):
     def get(self, request):
         try:
             mem_q = models.Member.objects.filter(is_active=True)
+            print(mem_q)
             mem_s = s.CreateGroupMemberSerializer(mem_q, many=True)
             print(mem_s.data)
             return JsonResponse(mem_s.data, safe=False)
@@ -309,43 +288,36 @@ class Creategroup(APIView):
             return JsonResponse({'message': 'Error (GET)'})
 
     def post(self, request):
-        try:
-            r = request.user.id
-            # r = 10
-            member1 = request.data['member1']
-            member2 = request.data['member2']
-            member3 = request.data['member3']
-            group_name = request.data['group_name']
-            models.Member.objects.get(username=member1)
-            models.Member.objects.get(username=member2)
-            models.Member.objects.get(username=member3)
-            print(models.Member.objects.get(pk=r).id)
-            print(type(request.user.id))
-            print(type(member1))
-            print('ok check member in db success')
-            if not models.Group.objects.filter(group_name=group_name).exists() and not models.Group.objects.filter(header=r).exists():
-                print('1')
-                print("let's create group")
-                print(models.Member.objects.get(pk=r))
-                print(type(models.Member.objects.get(pk=r)))
-                # models.Group(group_name=group_name,
-                #              header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in').save()
-                mygroup = models.Group(group_name=group_name,
-                                       header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in')
-                mygroup.is_active = True
-                mygroup.save()
-                print('create pass')
-                # models.RequestMember(sender=models.Group.objects.get(header=r),
-                #                      reveiver=models.Member.objects.get(username=member1), action=0).save()
-                # models.RequestMember(sender=models.Group.objects.get(header=r),
-                #                      reveiver=models.Member.objects.get(username=member2), action=0).save()
-                # models.RequestMember(sender=models.Group.objects.get(header=r),
-                #                      reveiver=models.Member.objects.get(username=member3), action=0).save()
-                return JsonResponse({'message': 'ok Create group success'})
-            return JsonResponse({'message': 'Error >>> Group name is already use or You have already created a group.'})
-        except Exception as e:
-            print(f'Error = {e}')
-            return JsonResponse({'message': 'Error (GET)'})
+        if request.user.id is None:
+            return JsonResponse({'message': 'Login before create group'})
+
+        header = models.Member.objects.get(username=request.user)
+
+        member = request.data['member']
+        group_name = request.data['group_name']
+
+        print(len(member))
+        if len(member) != 9:
+            return JsonResponse({'message': f'Error create group with 10 member!!! (include you)'})
+
+        for value in member:
+            if models.Member.objects.filter(username=value['username']).filter(id=value['id']).exists():
+                pass
+            else:
+                return JsonResponse({'message': f'Error this user {value["username"]} with {value["id"]} not found'}, status=404)
+
+        obj, create = models.Group.objects.get_or_create(
+            group_name=group_name, header=header, is_active=True)
+
+        if not create:
+            return JsonResponse({'message': f'Error this group name exists '}, status=404)
+
+        for value in member:
+            username = value['username']
+            id_ = value['id']
+            receiver = models.Member.ojects.get(username=username)
+            models.RequestMember.create(
+                sender=header, receiver=receiver, action=0)
 
 
 class Request(APIView):
@@ -427,3 +399,118 @@ def testget(request):
 #     except Exception as e:
 #         print(e)
 #         return HttpResponse('error')
+
+
+# @api_view(['GET', 'POST'])
+# def Login(request):
+#     try:
+#         if request.method == 'POST':
+#             user_login = authenticate(
+#                 request, username=request.data['username'], password=request.data['password'])
+#             print('my test = ', user_login)
+#             print('test = ', user_login.pk)
+#             if user_login is not None:
+#                 login(request, user_login)
+#                 session = request.session._session_key
+#                 member = models.Member.objects.get(pk=request.user.id)
+#                 mem_serializer = s.MemberSerializer(member)
+#                 # return JsonResponse(mem_serializer, safe=False)
+#                 return JsonResponse({'accessToken': session, 'username': member.username}, safe=False)
+#                 # return HttpResponse('ok!!!')
+#             else:
+#                 # member = models.Member.objects.get(pk=request.user.id)
+#                 # mem_serializer = s.MemberSerializer(member)
+#                 # return JsonResponse(mem_serializer.data, safe=False)
+#                 return JsonResponse({'message': 'username or password not correct!!!'})
+#                 # return HttpResponse('try again!!!')
+#         else:
+#             return render(request, 'login.html', {'form': LoginForm})
+#             # return HttpResponse('POST method only !!!')
+#     except Exception as e:
+#         print(e)
+#         return HttpResponse('try again2!!!')
+
+
+# creategroup
+    # def post(self, request):
+    #     try:
+    #         r = request.user.id
+    #         # r = 10
+    #         member1 = request.data['member1']
+    #         member2 = request.data['member2']
+    #         member3 = request.data['member3']
+    #         group_name = request.data['group_name']
+    #         models.Member.objects.get(username=member1)
+    #         models.Member.objects.get(username=member2)
+    #         models.Member.objects.get(username=member3)
+    #         print(models.Member.objects.get(pk=r).id)
+    #         print(type(request.user.id))
+    #         print(type(member1))
+    #         print('ok check member in db success')
+    #         if not models.Group.objects.filter(group_name=group_name).exists() and not models.Group.objects.filter(header=r).exists():
+    #             print('1')
+    #             print("let's create group")
+    #             print(models.Member.objects.get(pk=r))
+    #             print(type(models.Member.objects.get(pk=r)))
+    #             # models.Group(group_name=group_name,
+    #             #              header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in').save()
+    #             mygroup = models.Group(group_name=group_name,
+    #                                    header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in')
+    #             mygroup.is_active = True
+    #             mygroup.save()
+    #             print('create pass')
+    #             # models.RequestMember(sender=models.Group.objects.get(header=r),
+    #             #                      reveiver=models.Member.objects.get(username=member1), action=0).save()
+    #             # models.RequestMember(sender=models.Group.objects.get(header=r),
+    #             #                      reveiver=models.Member.objects.get(username=member2), action=0).save()
+    #             # models.RequestMember(sender=models.Group.objects.get(header=r),
+    #             #                      reveiver=models.Member.objects.get(username=member3), action=0).save()
+    #             return JsonResponse({'message': 'ok Create group success'})
+    #         return JsonResponse({'message': 'Error >>> Group name is already use or You have already created a group.'})
+    #     except Exception as e:
+    #         print(f'Error = {e}')
+    #         return JsonResponse({'message': 'Error (GET)'})
+
+    # @csrf_exempt
+# @api_view(['GET', 'POST'])
+# def Creategroup(request):
+#     try:
+#         r = request.user.id
+#         #r = 10
+#         member1 = request.data['member1']
+#         member2 = request.data['member2']
+#         member3 = request.data['member3']
+#         group_name = request.data['group_name']
+#         models.Member.objects.get(pk=member1)
+#         models.Member.objects.get(pk=member2)
+#         models.Member.objects.get(pk=member3)
+#         print(models.Member.objects.get(pk=r).id)
+#         print(type(request.user.id))
+#         print(type(member1))
+#         print('ok check member in db success')
+#         if not models.Group.objects.filter(group_name=group_name).exists():
+#             print('1')
+#             print("let's create group")
+#             # print(models.Member.objects.get(pk=r))
+#             # print(type(models.Member.objects.get(pk=r)))
+#             # models.Group(group=group_name,
+#             #              header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in').save()
+#             # models.Group(group=group_name,
+#             #              header=models.Member.objects.get(pk=r), outside_detail='out', inside_detail='in', is_active=True).save()
+#             # models.RequestMember(header=models.Group.objects.get(header=r),
+#             #                      member=models.Member.objects.get(pk=member1), action=0).save()
+#             # models.RequestMember(header=models.Group.objects.get(header=r),
+#             #                      member=models.Member.objects.get(pk=member2), action=0).save()
+#             # models.RequestMember(header=models.Group.objects.get(header=r),
+#             #                      member=models.Member.objects.get(pk=member3), action=0).save()
+#             mem_q = models.Member.objects.filter(is_active=True)
+#             print('q success')
+#             mem_s = s.CreateGroupMemberSerializer(mem_q, many=True)
+#             print('s success')
+#             print(mem_s.data)
+#             return JsonResponse(mem_s.data, safe=False)
+#             # return JsonResponse({'message': 'ok'})
+#         return JsonResponse({'message': 'group name is exists'})
+#     except Exception as e:
+#         print(e)
+#         return JsonResponse({'message': 'error'})

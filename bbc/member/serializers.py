@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.serializers import UUIDField
 from . import models
 from func import serializers as s
 
@@ -6,14 +7,14 @@ from func import serializers as s
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Member
-        fields = ('username', 'first_name', 'last_name',
-                  'email', 'tel', 'birthday', 'gender', 'mygroup')
+        fields = ['username', 'first_name', 'last_name',
+                  'email', 'tel', 'birthday', 'gender', 'mygroup']
 
 
 class CreateGroupMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Member
-        fields = ('id', 'username')
+        fields = ['id', 'username']
 
 
 # class RequestSerializer(serializers.ModelSerializer):
@@ -56,12 +57,9 @@ class ListgroupSerializer(serializers.ModelSerializer):
         read_only=True, slug_field='first_name', allow_null=True)
     # group = MembergroupSerializer(many=True, read_only=True, allow_null=True)
     group = serializers.StringRelatedField(many=True, allow_null=True)
-    # history_group = s.HistoryGroupSerializer(many=True)
     member = group
 
     class Meta:
         model = models.Group
         fields = ['group_name', 'header',
-                  'outside_detail', 'group', 'member',
-                  #   'history_group'
-                  ]
+                  'outside_detail', 'group', 'member']
