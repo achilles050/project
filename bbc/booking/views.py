@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, time, timedelta
+from datetime import time, timedelta
 from uuid import uuid4
 
 from . import models
@@ -16,6 +16,8 @@ from django.http.response import JsonResponse
 # from django.core import serializers
 from django.forms.models import model_to_dict
 # from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
+from django.utils.datetime_safe import datetime
 
 from rest_framework.views import APIView
 # Create your views here.
@@ -68,13 +70,15 @@ class booking(APIView):
             duration_minute = 10
             name = request.user.first_name
 
-        date_now = datetime.now().date()
-        time_out = (datetime.now() + timedelta(minutes=duration_minute)).time()
+        # date_now = datetime.now().date()
+        date_now = timezone.now().date()
+        time_out = (timezone.now() + timedelta(minutes=duration_minute)).time()
 
         for value in booking:
             court = int(value['court'][5:])
             yourtime = int(value['time'][:2])
             dt_booked = datetime.combine(date_now, time(yourtime))
+            dt_booked = timezone.make_aware(dt_booked)
             receipt = uuid4().hex
 
             if book.check_valid(court=court, yourtime=yourtime):
@@ -165,6 +169,6 @@ class confirm(APIView):
             q_history.save()
             print(history_obj_list)
             print(type(history_obj_list))
-            history_obj_list.apppend(q_history)
+            history_obj_list.append(q_history)
 
         return JsonResponse({'message': 'confirm success'})
