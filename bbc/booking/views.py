@@ -70,12 +70,13 @@ class booking(APIView):
             duration_minute = 10
             name = request.user.first_name
 
-        # date_now = datetime.now().date()
-        date_now = timezone.now().date()
-        time_out = (timezone.now() + timedelta(minutes=duration_minute)).time()
+        now = datetime.now()
+        date_now = datetime.now().date()
+        time_out = timezone.make_aware(
+            (now + timedelta(minutes=duration_minute))).time()
 
         for value in booking:
-            court = int(value['court'][5:])
+            court = int(value['column'][5:])
             yourtime = int(value['time'][:2])
             dt_booked = datetime.combine(date_now, time(yourtime))
             dt_booked = timezone.make_aware(dt_booked)
@@ -94,9 +95,6 @@ class booking(APIView):
                     time_out=time_out, receipt=receipt)
 
                 if not yourtime in range(int(dis_time_start), int(dis_time_end)):
-                    print(yourtime)
-                    print(dis_mem)
-                    print(dis_time)
                     dis_time = 0
 
                 if request.user.id is not None:
@@ -122,9 +120,6 @@ class booking(APIView):
                     status_obj.delete() if status_created else history_obj.delete()
 
         if len(booking) != len(status_obj_list):  # != len(history_obj_list):
-            print(len(booking))
-            print(len(status_obj_list))
-            print(len(history_obj_list))
             if len(status_obj_list) != 0:
                 for value in status_obj_list:
                     value.delete()
@@ -133,9 +128,6 @@ class booking(APIView):
                     value.delete()
             return JsonResponse({'success': False})
         else:
-            print(len(booking))
-            print(len(status_obj_list))
-            print(len(history_obj_list))
             response_dict = dict()
             response_dict['success'] = True
             response_dict['receipt'] = [
@@ -152,23 +144,39 @@ class confirm(APIView):
     def post(self, request):
         all_receipt = request.data['receipt']
         history_obj_list = []
+        status_obj_list = []
+        time_out_list = []
 
         for receipt in all_receipt:
-            if models.HistoryMember.objects.filter(receipt=receipt).filter(state=0).exists():
-                q_history = models.HistoryMember.objects.get(receipt=receipt)
+            now = timezone.make_aware(datetime.now())
+            receipt_in_status = models.Status.objects.filter(
+                time_out__gt=now).filter(receipt=receipt).exists()
+            q_otherdetail = models.OtherDetail.objects.get(pk=1)
+            time_close = q_otherdetail.time_close
 
-            elif models.HistoryGuest.objects.filter(receipt=receipt).filter(state=0).exists():
+            if models.HistoryMember.objects.filter(receipt=receipt).filter(state=0).exists() and receipt_in_status:
+                q_history = models.HistoryMember.objects.get(receipt=receipt)
+                q_status = models.Status.objects.get(receipt=receipt)
+            elif models.HistoryGuest.objects.filter(receipt=receipt).filter(state=0).exists() and receipt_in_status:
                 q_history = models.HistoryGuest.objects.get(receipt=receipt)
+                q_status = models.Status.objects.get(receipt=receipt)
             else:
-                print('receipt error')
                 if len(history_obj_list) != 0:
-                    for value in history_obj_list:
-                        value.state = 0
+                    for index in range(len(history_obj_list)):
+                        print(history_obj_list[index].state)
+                        history_obj_list[index].state = 0
+                        history_obj_list[index].save()
+                        status_obj_list[index].time_out = time_out_list[index]
+                        status_obj_list[index].save()
+
                 return JsonResponse({'message': 'error receipt not found'})
+
+            time_out_list.append(q_status.time_out)
+            status_obj_list.append(q_status)
+            history_obj_list.append(q_history)
             q_history.state = 1
             q_history.save()
-            print(history_obj_list)
-            print(type(history_obj_list))
-            history_obj_list.append(q_history)
+            q_status.time_out = time_close
+            q_status.save()
 
         return JsonResponse({'message': 'confirm success'})

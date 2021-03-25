@@ -8,7 +8,7 @@ class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Member
         fields = ['username', 'first_name', 'last_name',
-                  'email', 'tel', 'birthday', 'gender', 'mygroup']
+                  'email', 'tel', 'birthday', 'gender']
 
 
 class CreateGroupMemberSerializer(serializers.ModelSerializer):

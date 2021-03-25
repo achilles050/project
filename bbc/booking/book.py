@@ -2,6 +2,7 @@ from . import models
 from member.models import Member
 from datetime import time, datetime  # , timedelta
 from django.core.mail import send_mail
+from django.utils import timezone
 
 # +timedelta(hours=1)
 
@@ -12,9 +13,9 @@ def check_valid(court, yourtime):  # time in hour unit
         detail = models.OtherDetail.objects.get(pk=1)
         maintain = models.CourtDetail.objects.get(
             court_number=court).maintain
-        past = yourtime >= datetime.now().hour
+        past = yourtime >= timezone.make_aware(datetime.now()).hour
         valid = not models.Status.objects.filter(
-            time=t).filter(court_id__court_number=court).filter(time_out__gt=datetime.now().time()).exists()
+            time=t).filter(court_id__court_number=court).filter(time_out__gt=timezone.make_aware(datetime.now()).time()).exists()
         if yourtime in range(detail.time_open.hour, detail.time_close.hour) and valid and not maintain and past:
             return True
         else:

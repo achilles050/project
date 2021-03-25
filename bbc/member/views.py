@@ -90,7 +90,8 @@ class Login(APIView):
         auth = authenticate(username=username, password=password)
         if auth is not None:
             login(request, auth)
-            return JsonResponse({'login successfully': f'HI {auth}'}, status=200)
+            return JsonResponse({'username': username})
+            # return JsonResponse({'login successfully': f'HI {auth}'}, status=200)
         else:
             return JsonResponse({'message': 'try again'}, status=404)
 
@@ -137,7 +138,7 @@ class Profile(APIView):
                 member = models.Member.objects.get(pk=request.user.id)
                 mem_serializer = s.MemberSerializer(member)
                 return JsonResponse(mem_serializer.data, safe=False)
-            return JsonResponse({'message': 'Pls login. (GET)'}, safe=False)
+            return JsonResponse({'message': 'Pls login. (GET)'})
         except Exception as e:
             print(f'Error {e}')
             return JsonResponse({'message': 'Error(GET)'}, safe=False)
