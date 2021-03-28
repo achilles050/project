@@ -18,7 +18,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Group',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('group_name', models.CharField(max_length=100, unique=True)),
                 ('outside_detail', models.CharField(max_length=500)),
                 ('inside_detail', models.CharField(max_length=500)),
@@ -32,13 +33,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Member',
             fields=[
-                ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
+                ('user_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE,
+                                                  parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
                 ('tel', models.CharField(max_length=10)),
                 ('birthday', models.DateField(null=True)),
                 ('gender', models.CharField(max_length=10)),
                 ('group_role', models.IntegerField(null=True)),
                 ('test', models.CharField(max_length=5, null=True)),
-                ('mygroup', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='member.Group', to_field='group_name')),
+                ('mygroup', models.ForeignKey(
+                    null=True, on_delete=django.db.models.deletion.SET_NULL, to='member.Group', to_field='group_name')),
             ],
             options={
                 'db_table': 'member',
@@ -51,12 +54,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RequestMember',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('action', models.IntegerField(default=None)),
                 ('state', models.BooleanField(default=False)),
                 ('count', models.IntegerField(default=0)),
-                ('header', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='member.Group')),
-                ('member', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='member.Member')),
+                ('header', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE, to='member.Group')),
+                ('member', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE, to='member.Member')),
             ],
             options={
                 'db_table': 'request_member',
@@ -65,12 +71,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Request',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('action', models.IntegerField(default=None)),
                 ('state', models.BooleanField(default=False)),
                 ('count', models.IntegerField(default=0)),
-                ('receiver', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='receiver', to='member.Member', to_field='username')),
-                ('sender', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sender', to='member.Member', to_field='username')),
+                ('receiver', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                               related_name='receiver', to='member.Member', to_field='username')),
+                ('sender', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                             related_name='sender', to='member.Member', to_field='username')),
             ],
             options={
                 'db_table': 'request',
@@ -79,10 +88,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GroupMember',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('on_court', models.BooleanField(default=False)),
-                ('group_name', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='group', to='member.Group', to_field='group_name')),
-                ('member', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='member.Member')),
+                ('group_name', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                                                 related_name='group', to='member.Group', to_field='group_name')),
+                ('member', models.ForeignKey(
+                    on_delete=django.db.models.deletion.CASCADE, to='member.Member')),
             ],
             options={
                 'db_table': 'group_member',
@@ -91,6 +103,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='group',
             name='header',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='member.Member'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to='member.Member'),
         ),
     ]

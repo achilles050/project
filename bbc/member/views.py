@@ -3,6 +3,7 @@ from booking import models as booking_models
 from . import serializers as s
 from .form import LoginForm
 from . import token
+from . import group
 
 from datetime import date
 import json
@@ -158,25 +159,57 @@ class Profile(APIView):
             return JsonResponse({'message': 'Error(POST)'}, safe=False)
 
 
-class Listgroup(APIView):
+class AllGroup(APIView):
     def get(self, request):
         try:
             query = models.Group.objects.filter(is_active=True)
-            s_query = s.ListgroupSerializer(query, many=True)
-            print(type(s_query.data))
-            d = {'data': s_query.data}
+            d = dict()
+            l = []
+            for value in query:
+                q_group_member = models.GroupMember.objects.filter(
+                    group=value.id)
+                inner_list = []
+                for innner_value in q_group_member:
+                    inner_list.append(innner_value.member.first_name)
+
+                l.append({'group_name': value.group_name,
+                          'header': value.header.first_name,
+                          'detail': value.outside_detail,
+                          'member': inner_list
+                          })
+            d['data'] = l
             return JsonResponse(d)
         except Exception as e:
             print(f'Error {e}')
             return JsonResponse({'message': 'Error(GET)'}, safe=False)
 
-    def post(self, request):
-        try:
 
-            return JsonResponse({'message': 'OK (POST)'}, safe=False)
+class MyGroup(APIView):
+    def get(self, request, groupname):
+        try:
+            mygroup = models.Group.objects.get(group_name=groupname)
+            groupid = mygroup.id
+            print(group.group_mem_per(groupid=groupid, memberid=request.user.id))
+            print(group.group_head_per(groupid=groupid, memberid=request.user.id))
+            if group.group_mem_per(groupid=groupid, memberid=request.user.id):
+                if group.group_head_per(groupid=groupid, memberid=request.user.id):
+                    role = 'header'
+                else:
+                    role = 'member'
+                query = models.Group.objects.get(pk=groupid)
+                for value in query:
+                    pass
+                    # query = models.Group.objects.values().filter(
+                    #     is_active=True).get(group_name=groupname)
+                    # print(query)
+                    # s_query = s.ListgroupSerializer(query, many=True)
+                    # print(type(s_query.data))
+                    # d = {'data': s_query.data}
+                    # return JsonResponse(query)
+            return JsonResponse({'m': 'm'})
         except Exception as e:
             print(f'Error {e}')
-            return JsonResponse({'message': 'Error(POST)'}, safe=False)
+            return JsonResponse({'message': 'Error(GET)'}, safe=False)
 
 
 class Mygroup(APIView):
@@ -280,9 +313,7 @@ class Creategroup(APIView):
     def get(self, request):
         try:
             mem_q = models.Member.objects.filter(is_active=True)
-            print(mem_q)
             mem_s = s.CreateGroupMemberSerializer(mem_q, many=True)
-            print(mem_s.data)
             return JsonResponse(mem_s.data, safe=False)
         except Exception as e:
             print(f'Error = {e}')
@@ -291,6 +322,8 @@ class Creategroup(APIView):
     def post(self, request):
         if request.user.id is None:
             return JsonResponse({'message': 'Login before create group'})
+        else:
+            pass
 
         header = models.Member.objects.get(username=request.user)
 
@@ -298,27 +331,27 @@ class Creategroup(APIView):
         group_name = request.data['group_name']
 
         print(len(member))
-        if len(member) != 9:
-            return JsonResponse({'message': f'Error create group with 10 member!!! (include you)'})
+        # if len(member) != 9:
+        #     return JsonResponse({'message': f'Error create group with 10 member!!! (include you)'})
 
         for value in member:
-            if models.Member.objects.filter(username=value['username']).filter(id=value['id']).exists():
+            if models.Member.objects.filter(username=value).exists():
                 pass
             else:
-                return JsonResponse({'message': f'Error this user {value["username"]} with {value["id"]} not found'}, status=404)
+                return JsonResponse({'message': f'Error this user {value} not found'}, status=404)
 
         obj, create = models.Group.objects.get_or_create(
             group_name=group_name, header=header, is_active=True)
 
         if not create:
-            return JsonResponse({'message': f'Error this group name exists '}, status=404)
+            return JsonResponse({'message': f'Error this group name {obj.group_name} exists '}, status=404)
 
         for value in member:
-            username = value['username']
-            id_ = value['id']
-            receiver = models.Member.ojects.get(username=username)
-            models.RequestMember.create(
-                sender=header, receiver=receiver, action=0)
+            username = value
+            receiver = models.Member.objects.get(username=username)
+            models.Request.objects.create(
+                sender=header, receiver=receiver, action=0, group_id=obj.id)
+        return JsonResponse({f'message': 'create group {obj.group_name} success waiting for accept from another member'})
 
 
 class Request(APIView):
@@ -326,16 +359,19 @@ class Request(APIView):
     def get(self, request):
         try:
             if request.user.id is not None:
-                print(request.user)
-                print(models.Request.objects.filter(receiver=request.user))
+                # print(request.user)
+                # print(models.Request.objects.filter(receiver=request.user))
                 query = models.Request.objects.filter(
                     receiver=request.user)
-                mydict = list()
+                mydict = dict()
+                l = list()
                 for i in query:
-                    mydict.append(
-                        {'sender': i.sender.username, 'action': i.action})
-                print(mydict)
-                return HttpResponse(json.dumps(mydict), content_type='application/json')
+                    l.append(
+                        {'sender': i.sender.first_name, 'action': 'accept create group' if i.action == 0 else ''})
+                mydict['data'] = l
+                # print(mydict)
+                return JsonResponse(mydict)
+                # return HttpResponse(json.dumps(mydict), content_type='application/json')
                 # return HttpResponse('<html> <head> </head> <body> <button type="submit" formmethod="POST"> Click Me!</button> </body> </html>')
                 # return HttpResponse('<html> <head> </head> <body> <form method="POST" action="/test/">{% csrf_token %}<button type="submit" >Continue</button></form> </body> </html>')
             return HttpResponse('Pls login (GET)')

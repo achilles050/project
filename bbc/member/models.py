@@ -21,12 +21,12 @@ class Group(models.Model):
 class GroupMember(models.Model):
     class Meta:
         db_table = 'group_member'
-    group_name = models.ForeignKey(
-        Group, on_delete=models.CASCADE, to_field='group_name', null=True, related_name='group')
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, null=True, related_name='group')
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE)
     # for show role in group h = header, m = member
-    role = models.CharField(max_length=1, default='m')
+    # role = models.CharField(max_length=1, default='m')
     on_court = models.BooleanField(default=False)
 
 
@@ -62,6 +62,7 @@ class Request(models.Model):
 
     class Meta:
         db_table = 'request'
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     sender = models.ForeignKey(
         Member, on_delete=models.CASCADE, to_field='username', related_name='sender')
     receiver = models.ForeignKey(

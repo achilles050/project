@@ -49,7 +49,7 @@ class MygroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Group
-        fields = ['group_name', 'header', 'inside_detail', 'group', 'member']
+        fields = ['group', 'header', 'inside_detail', 'group', 'member']
 
 
 class ListgroupSerializer(serializers.ModelSerializer):
@@ -61,5 +61,5 @@ class ListgroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Group
-        fields = ['group_name', 'header',
+        fields = ['group', 'header',
                   'outside_detail', 'group', 'member']

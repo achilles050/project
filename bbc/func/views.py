@@ -23,7 +23,7 @@ class MemberViewSet(viewsets.ModelViewSet):
 
 
 class RequestMemberViewSet(viewsets.ModelViewSet):
-    queryset = mem_models.RequestMember.objects.all().order_by('id')
+    queryset = mem_models.Request.objects.all().order_by('id')
     serializer_class = s.RequestMemberSerializer
 
 

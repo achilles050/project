@@ -25,8 +25,8 @@ class MemberSerializer(serializers.HyperlinkedModelSerializer):
 
 class RequestMemberSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = mem_models.RequestMember
-        fields = ('id', 'header', 'member', 'action', 'state', 'count')
+        model = mem_models.Request
+        fields = ('id', 'sender', 'receiver', 'action', 'state', 'count')
 
 
 class RequestSerializer(serializers.HyperlinkedModelSerializer):
