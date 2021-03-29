@@ -59,15 +59,18 @@ class booking(APIView):
         normal_price = 0
         ds_time = 0
         ds_mem = 0
+        q_other = models.OtherDetail.objects.get(pk=1)
+        guest_gap = q_other.confirm_gap_min_guest
+        mem_gap = q_other.confirm_gap_min_member
 
         if request.user.id is None:
             # guest = request.data['guest']
             name = request.data['name']  # guest['name']
             guest_email = request.data['email']  # guest['email']
             guest_tel = request.data['phone']  # guest['tel']
-            duration_minute = 1
+            duration_minute = guest_gap
         else:
-            duration_minute = 10
+            duration_minute = mem_gap
             name = request.user.first_name
 
         now = datetime.now()
@@ -135,7 +138,7 @@ class booking(APIView):
             response_dict['price'] = {}
             response_dict['price']['normal_price'] = normal_price
             response_dict['price']['discount_time'] = ds_time
-            response_dict['price']['discouht_member'] = ds_mem
+            response_dict['price']['discount_member'] = ds_mem
             return JsonResponse(response_dict)
         return HttpResponse('??????')
 

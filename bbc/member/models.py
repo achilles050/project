@@ -16,6 +16,8 @@ class Group(models.Model):
     is_continue = models.BooleanField(default=False)
     # change when not pay next month(use cronjob to change) False = not use now(not show in list group)
     is_active = models.BooleanField(default=False)
+    # count are count when member accept creste group request
+    count = models.IntegerField(default=0)
 
 
 class GroupMember(models.Model):
@@ -25,8 +27,8 @@ class GroupMember(models.Model):
         Group, on_delete=models.CASCADE, null=True, related_name='group')
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE)
-    # for show role in group h = header, m = member
-    # role = models.CharField(max_length=1, default='m')
+    # for show role in group h = header, m = member, j=join
+    role = models.CharField(max_length=1, default='')
     on_court = models.BooleanField(default=False)
 
 
@@ -71,5 +73,3 @@ class Request(models.Model):
     action = models.IntegerField(default=None)
     # change to True when action that request
     state = models.BooleanField(default=False)
-    # count are count when member accept creste group request
-    count = models.IntegerField(default=0)

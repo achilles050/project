@@ -38,13 +38,15 @@ class CourtDetail(models.Model):
 class OtherDetail(models.Model):
     class Meta:
         db_table = 'other_detail'
-    refund_gap_minute = models.DecimalField(max_digits=3, decimal_places=0)
-    confirm_gap_minute = models.DecimalField(max_digits=3, decimal_places=0)
-    refund_percent = models.DecimalField(max_digits=3, decimal_places=0)
+    refund_gap_min = models.IntegerField(default=30)
+    confirm_gap_min_guest = models.IntegerField(default=1)
+    confirm_gap_min_member = models.IntegerField(default=10)
+    refund_percent = models.DecimalField(max_digits=4, decimal_places=2)
     time_open = models.TimeField()
     time_close = models.TimeField()
     force_close = models.BooleanField(default=False)
-    #annouce = models.CharField(max_length=500)
+    annouce = models.CharField(max_length=500, null=True)
+    n_member_creategroup = models.IntegerField(default=3)
 
 
 class HistoryGuest(models.Model):

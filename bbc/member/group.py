@@ -1,16 +1,16 @@
 from . import models
+# from django.db.models import Q
 
 
 def group_mem_per(memberid, groupid):
-    print(memberid)
-    print(groupid)
-    q = models.GroupMember.objects.filter(
-        group=groupid).filter(member=memberid).exists()
-    return q  # .values()
+    q_gm = models.GroupMember.objects.filter(
+        group_id=groupid).filter(member_id=memberid).filter(role='m').exists()
+    q_g = models.Group.objects.filter(
+        header=memberid).filter(id=groupid).exists()
+    return q_gm or q_g
 
 
 def group_head_per(memberid, groupid):
-    print(memberid)
-    print(groupid)
-    q = models.Group.objects.filter(header=memberid).exists()
+    q = models.Group.objects.filter(
+        header=memberid).filter(id=groupid).exists()
     return q
