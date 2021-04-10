@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 
 
 class CheckRange(APIView):
-    def get(self, request):
+    def post(self, request):
         try:
             y = request.data['year']
             m = request.data['month']
@@ -35,7 +35,8 @@ class CheckRange(APIView):
                 datetime.now() + info.range_booking).date()
             inrange_more = dt.date() >= timezone.make_aware(datetime.now()).date()
             if inrange_less and inrange_more:
-                return JsonResponse({'msg': True}, status=200)
+                date = str(y)+str(int(m)+1)+str(d)
+                return JsonResponse({'msg': True, 'date': date}, status=200)
             else:
                 return JsonResponse({'msg': False}, status=404)
         except Exception as e:
@@ -177,7 +178,7 @@ class Booking(APIView):
 class Payment(APIView):
     def post(self, request):
         all_bookingid = request.data['bookingid']
-        otp = request.data['otp']
+        otp = 1234  # request.data['otp']
         booking_obj_list = []
         pay = 0
 
