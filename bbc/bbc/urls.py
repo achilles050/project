@@ -23,5 +23,5 @@ urlpatterns = [
     #path('logout/', views.LogoutView.as_view()),
     path('', include('member.urls')),
     path('', include('booking.urls')),
-    path('', include('func.urls')),
+    # path('', include('func.urls')),
 ]

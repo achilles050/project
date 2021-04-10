@@ -6,10 +6,8 @@ from django.contrib.auth.models import User
 
 class Group(models.Model):
     class Meta:
-        db_table = 'group'
+        db_table = 'bbc_group'
     group_name = models.CharField(max_length=100, unique=True)
-    header = models.ForeignKey(
-        'Member', on_delete=models.CASCADE)
     outside_detail = models.CharField(max_length=500)
     inside_detail = models.CharField(max_length=500)
     # change when pay to next month court to True(use cronjob check this change below)
@@ -22,7 +20,7 @@ class Group(models.Model):
 
 class GroupMember(models.Model):
     class Meta:
-        db_table = 'group_member'
+        db_table = 'bbc_groupmember'
     group = models.ForeignKey(
         Group, on_delete=models.CASCADE, null=True, related_name='group')
     member = models.ForeignKey(
@@ -34,36 +32,18 @@ class GroupMember(models.Model):
 
 class Member(User):
     class Meta:
-        db_table = 'member'
+        db_table = 'bbc_member'
     tel = models.CharField(max_length=10)
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10)
-    # mygroup = models.ForeignKey(
-    #     Group, on_delete=models.SET_NULL, null=True, to_field='group_name')
-    # group_role = models.IntegerField(null=True)
-    # test = models.CharField(max_length=5, null=True)
-
-    # def __str__(self):
-    #     return self.username
-
-
-class RequestMember(models.Model):  # for create, join, change header notification
-    class Meta:
-        db_table = 'request_member'
-    header = models.ForeignKey(Group, on_delete=models.CASCADE)
-    member = models.ForeignKey(Member, on_delete=models.CASCADE)
-    # when request to create group = 0, join = 1, change header = 2
-    action = models.IntegerField(default=None)
-    # change to True when action that request
-    state = models.BooleanField(default=False)
-    # count are count when member accept creste group request
-    count = models.IntegerField(default=0)
+    # for show in creategroup request
+    public = models.BooleanField(default=True)
 
 
 class Request(models.Model):
 
     class Meta:
-        db_table = 'request'
+        db_table = 'bbc_request'
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     sender = models.ForeignKey(
         Member, on_delete=models.CASCADE, to_field='username', related_name='sender')
@@ -72,4 +52,4 @@ class Request(models.Model):
     # when request to create group = 0, join = 1, change header = 2
     action = models.IntegerField(default=None)
     # change to True when action that request
-    state = models.BooleanField(default=False)
+    read = models.BooleanField(default=False)

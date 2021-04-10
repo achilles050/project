@@ -52,8 +52,6 @@ def Register(request):
         birthday = '1999/03/15'  # request.data['birthday']
         gender = 'male'  # request.data['gender']
 
-        # my_data = JSONParser().parse(request)
-
         try:
             if not models.Member.objects.filter(email=email).exists():
                 b = birthday.split('/')
@@ -284,7 +282,7 @@ class MyGroup(APIView):
                     group=mygroup, member=mem, role='j')
                 if created:
                     models.Request.objects.create(
-                        sender=mem, receiver=mygroup.header, action=0, group_id=obj.group_id)
+                        sender=mem, receiver=mygroup.header, action=1, group_id=obj.group_id)
                     return JsonResponse({'msg': 'join success waiting for accept from header this group'})
                 else:
                     return JsonResponse({'msg': 'try again'})
@@ -311,7 +309,7 @@ class Request(APIView):
         try:
             if request.user.id is not None:
                 query = models.Request.objects.filter(
-                    receiver=request.user).filter(state=False)
+                    receiver=request.user).filter(read=False)
                 mydict = dict()
                 l = list()
                 for i in query:
@@ -322,7 +320,7 @@ class Request(APIView):
                     else:
                         msg = ''
                     l.append(
-                        {'id': i.id, 'sender': i.sender.first_name, 'msg': msg})
+                        {'id': i.id, 'sender': i.sender.first_name, 'msg': msg, 'group': i.group})
                 mydict['data'] = l
                 return JsonResponse(mydict)
             return HttpResponse('Pls login (GET)')
@@ -336,18 +334,23 @@ class Request(APIView):
                 myid = request.data['id']
                 query = models.Request.objects.get(pk=myid)
                 q_group = models.Group.objects.get(pk=query.group_id)
-
+                if query.read == True:
+                    return JsonResponse({'msg': 'try again'}, status=400)
                 if query.action == 0:  # accept create group
+                    if request.user.id == query.receiver.id:
+                        pass
+                    else:
+                        return JsonResponse({'msg': 'you not have permission'}, status=400)
                     q_other = booking_models.OtherDetail.objects.get(pk=1)
                     number_creategroup = q_other.n_member_creategroup
-                    mem = models.Member.objects.get(pk=request.user.id)
+                    mem = models.Member.objects.get(pk=query.receiver)
 
                     obj, created = models.GroupMember.objects.get_or_create(
                         group=q_group, member=mem, role='m')
                     if created:
                         q_group.count += 1
                         q_group.save()
-                        query.state = 1
+                        query.read = 1
                         query.save()
 
                     if q_group.count == number_creategroup:
@@ -355,17 +358,17 @@ class Request(APIView):
                         q_group.save()
 
                 elif query.action == 1:  # accept join group
-
-                    if group_head_per(member=request.user.id, groupid=q_group.id):
+                    if group.group_head_per(memberid=request.user.id, groupid=q_group.id):
                         q_gm = models.GroupMember.objects.get(
                             member_id=query.sender, group_id=q_group.id)
 
                         if q_gm.role == 'j':
-                            q_gm.ipdate(role='m')
-                            query.state = 1
+                            q_gm.role = 'm'
+                            q_gm.save()
+                            query.read = 1
                             query.save()
                     else:
-                        return JsonResponse({'msg': 'you not have permission (header only)'})
+                        return JsonResponse({'msg': 'you not have permission (header only)'}, status=400)
 
                 return JsonResponse({'msg': 'ok'})
             return JsonResponse({'msg': 'pls login'})

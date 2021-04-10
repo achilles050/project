@@ -7,16 +7,31 @@ from django.utils import timezone
 # +timedelta(hours=1)
 
 
-def check_valid(court, yourtime):  # time in hour unit
+def check_valid(court, mytime, mydate):  # time in hour unit
     try:
-        t = time(yourtime)
-        detail = models.OtherDetail.objects.get(pk=1)
-        maintain = models.CourtDetail.objects.get(
-            court_number=court).maintain
-        past = yourtime >= timezone.make_aware(datetime.now()).hour
-        valid = not models.Status.objects.filter(
-            time=t).filter(court_id__court_number=court).filter(time_out__gt=timezone.make_aware(datetime.now()).time()).exists()
-        if yourtime in range(detail.time_open.hour, detail.time_close.hour) and valid and not maintain and past:
+        dt = timezone.make_aware(datetime.combine(mydate, time(mytime)))
+        info = models.AllCourtInfo.objects.all()[0]
+        maintain = models.EachCourtInfo.objects.get(
+            court_number=court).is_maintain
+        now = datetime.now()
+        now_hour = timezone.make_aware(
+            datetime.combine(now.date(), time(now.hour)))
+        past = dt >= now_hour
+        inrange = dt <= timezone.make_aware(
+            datetime.now() + info.range_booking)
+        valid = not models.Booking.objects.filter(
+            booking_datetime=dt).filter(court_id__court_number=court).filter(exp_datetime__gt=timezone.make_aware(datetime.now())).exists()
+        if info.open_time.hour > info.close_time.hour:
+            time_range = list(
+                range(info.close_time.hour, info.open_time.hour))
+            l = list(range(0, 24))
+            for value in time_range:
+                if value in l:
+                    l.remove(value)
+            time_range = l
+        else:
+            time_range = list(range(info.open_time.hour, info.close_time.hour))
+        if mytime in time_range and valid and not maintain and past and inrange:
             return True
         else:
             return False

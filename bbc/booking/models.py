@@ -4,160 +4,93 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 
-class CheckPayment(models.Model):
+class AllCourtInfo(models.Model):
     class Meta:
-        db_table = 'check_payment'
-    history_guest = models.ForeignKey(
-        'HistoryGuest', on_delete=models.CASCADE, null=True)
-    history_member = models.ForeignKey(
-        'HistoryMember', on_delete=models.CASCADE, null=True)
-    history_group = models.ForeignKey(
-        'HistoryGroup', on_delete=models.CASCADE, null=True)
-    transection = models.DecimalField(max_digits=20, decimal_places=0)
-    #ref2 = models.DecimalField(max_digits=20, decimal_places=0)
-    amount = models.DecimalField(max_digits=5, decimal_places=2)
-    # change when check success by admin
-    state = models.BooleanField(default=False)
-    # changee when checking found transaction if not change state in hsmem to 3
-    is_found = models.BooleanField(default=False)
+        db_table = 'bbc_allcourtinfo'
+
+    force_close = models.BooleanField(default=False)  # for close allcourt
+    range_booking = models.DurationField()  # range can booking before
+    payment_member_duration = models.DurationField()  # must pay in this duration(mem)
+    payment_guest_duration = models.DurationField()  # must pay in this duration(g)
+    refund_duration = models.DurationField()  # refund duration only
+    refund_percent = models.DecimalField(
+        max_digits=4, decimal_places=2)  # percent can refund in time
+    open_time = models.TimeField()
+    close_time = models.TimeField()
+    # use when member create group(not include header)
+    num_of_creategroup = models.PositiveIntegerField()
+    announce = models.CharField(max_length=1000)  # for annouce information
+    ads = models.CharField(max_length=500)  # for promote something
+    rules = models.CharField(max_length=1000)  # store rule when go to court
+    # store image qrcode for payment
+    qrcode = models.ImageField(null=True, upload_to='qrcode')
 
 
-class CourtDetail(models.Model):
+class EachCourtInfo(models.Model):
     class Meta:
-        db_table = 'court_detail'
+        db_table = 'bbc_eachcourtinfo'
     court_number = models.IntegerField(unique=True)
     price_normal = models.DecimalField(max_digits=5, decimal_places=2)
     price_ds_mem = models.DecimalField(max_digits=5, decimal_places=2)
-    price_ds_gang = models.DecimalField(max_digits=5, decimal_places=2)
+    price_ds_group = models.DecimalField(max_digits=5, decimal_places=2)
     price_ds_time = models.DecimalField(max_digits=5, decimal_places=2)
     time_ds_start = models.TimeField()
     time_ds_end = models.TimeField()
-    maintain = models.BooleanField(default=False)
+    is_maintain = models.BooleanField(default=False)
 
 
-class OtherDetail(models.Model):
+class Booking(models.Model):
     class Meta:
-        db_table = 'other_detail'
-    refund_gap_min = models.IntegerField(default=30)
-    confirm_gap_min_guest = models.IntegerField(default=1)
-    confirm_gap_min_member = models.IntegerField(default=10)
-    refund_percent = models.DecimalField(max_digits=4, decimal_places=2)
-    time_open = models.TimeField()
-    time_close = models.TimeField()
-    force_close = models.BooleanField(default=False)
-    annouce = models.CharField(max_length=500, null=True)
-    n_member_creategroup = models.IntegerField(default=3)
-
-
-class HistoryGuest(models.Model):
-    class Meta:
-        db_table = 'history_guest'
-    guest_name = models.CharField(max_length=50)
+        db_table = 'bbc_booking'
+    name = models.CharField(max_length=100)  # for show who's booked
+    email = models.EmailField()
+    tel = models.CharField(max_length=15)
+    member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, null=True)  # null if guest
+    # null if not group booking
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     court = models.ForeignKey(
-        CourtDetail, on_delete=models.CASCADE, to_field='court_number')
-    date_time = models.DateTimeField()
-    pay = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    guest_email = models.EmailField()
-    guest_tel = models.CharField(max_length=10)
-    # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
-    state = models.IntegerField(default=0)
-    receipt = models.CharField(max_length=32, null=True)
-    timestamp = models.DateTimeField(auto_now=True)
-
-
-class HistoryMember(models.Model):
-    class Meta:
-        db_table = 'history_member'
-    username = models.ForeignKey(
-        Member, on_delete=models.CASCADE, related_name='history_member')
-    court = models.ForeignKey(
-        CourtDetail, on_delete=models.CASCADE, to_field='court_number')
-    date_time = models.DateTimeField()
+        EachCourtInfo, on_delete=models.CASCADE)  # what court
+    booking_datetime = models.DateTimeField()  # datetime booking
+    exp_datetime = models.DateTimeField()  # for pay in this time
     price_normal = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True)
-    total_ds = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    pay = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+        max_digits=5, decimal_places=2)  # each booking slot
+    price_ds = models.DecimalField(
+        max_digits=5, decimal_places=2)  # each booking slot
+    price_pay = models.DecimalField(
+        max_digits=5, decimal_places=2)  # each booking slot
     # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
-    state = models.IntegerField(default=0)
-    receipt = models.CharField(max_length=32, null=True)
-    timestamp = models.DateTimeField(auto_now=True)
+    payment_state = models.IntegerField(default=0)
+    timestamp = models.DateTimeField(auto_now=True)  # time now when booking
+    # bookingid for identify your court was booked
+    bookingid = models.CharField(max_length=32)
+    # identify your payment (can repeated)
+    paymentid = models.CharField(max_length=32, null=True)
+    # use when delete by member or admin but stored
+    is_deleted = models.BooleanField(default=False)
 
 
-class HistoryGroup(models.Model):
+class Payment(models.Model):
     class Meta:
-        db_table = 'history_group'
-    header = models.ForeignKey(
-        Group, on_delete=models.CASCADE, related_name='history_group')
-    court = models.ForeignKey(
-        CourtDetail, on_delete=models.CASCADE, to_field='court_number')
-    day = models.DecimalField(max_digits=1, decimal_places=0)
-    time = models.TimeField()
-    price_normal = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True)
-    total_ds = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    pay = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
-    state = models.IntegerField(default=0)
-    receipt = models.CharField(max_length=32, null=True)
+        db_table = 'bbc_payment'
+    paymentid = models.CharField(max_length=32, unique=True)
+    payment_otp = models.IntegerField()  # for write in your slip for easier checking
+    # time when send slip for checking can be approximate
     timestamp = models.DateTimeField(auto_now=True)
+    pay = models.DecimalField(max_digits=5, decimal_places=2)
+    # change when check success by admin
+    is_checked = models.BooleanField(default=False)
+    # changee when checking found transaction if not change state in booking table to 3
+    is_founded = models.BooleanField(default=True)
 
 
 class Refund(models.Model):
     class Meta:
-        db_table = 'refund'
-    history_member = models.ForeignKey(
-        HistoryMember, on_delete=models.CASCADE, null=True)
-    history_group = models.ForeignKey(
-        HistoryGroup, on_delete=models.CASCADE, null=True)
-    detail = models.CharField(max_length=20)
-    # change when refund success by admin
-    state = models.BooleanField(default=False)
-
-
-class Status(models.Model):
-    class Meta:
-        db_table = 'status'
-    court = models.ForeignKey(
-        CourtDetail, on_delete=models.CASCADE, related_name='court_num')
-    name = models.CharField(max_length=50)
-    time = models.TimeField()
-    time_out = models.TimeField(default=None)
-    receipt = models.CharField(max_length=32, null=True)
-
-    # def __str__(self):
-    #     mystr = str(self.court.court_number)+' ' + \
-    #         self.name+' '+str(self.time.hour)
-    #     return mystr
-
-
-# show in admin only to show refund require from booked page
-# class Refund(models.Model):
-#     class Meta:
-#         db_table = 'refund'
-#     history_member = models.ForeignKey(
-#         HistoryMember, on_delete=models.CASCADE)
-#     time_stamp = models.TimeField(auto_now_add=True)
-
-#     state = models.BooleanField(default=False)
-
-
-# class Price(models.Model):
-#     class Meta:
-#         db_table = 'price'
-#     court = models.ForeignKey(Court, on_delete=models.CASCADE)
-#     price_normal = models.DecimalField(max_digits=5, decimal_places=2)
-#     ds_mem = models.DecimalField(max_digits=5, decimal_places=2)
-#     ds_time = models.DecimalField(max_digits=5, decimal_places=2)
-#     ds_gang = models.DecimalField(max_digits=5, decimal_places=2)
-
-
-# class Time(models.Model):
-#     class Meta:
-#         db_table = 'time'
-#     court = models.ForeignKey(Court, on_delete=models.CASCADE)
-#     time_open = models.TimeField()
-#     time_close = models.TimeField()
-#     ds_time_start = models.TimeField()
-#     ds_time_end = models.TimeField()
-#     refund_time_gap = models.DecimalField(
-#         max_digits=3, decimal_places=0)  # in minute
+        db_table = 'bbc_refund'
+    payment = models.ForeignKey(
+        Payment, on_delete=models.CASCADE)
+    detail = models.CharField(max_length=20)  # customer bankingid
+    timestamp = models.DateTimeField(
+        auto_now=True)  # for check is in refund time
+    is_refunded = models.BooleanField(
+        default=False)  # change when refund success
