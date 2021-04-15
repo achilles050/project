@@ -4,24 +4,17 @@ from . import models
 from func import serializers as s
 
 
-# class MemberSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.Member
-#         fields = ['username', 'first_name', 'last_name',
-#                   'email', 'tel', 'birthday', 'gender']
+class MemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Member
+        fields = ['username', 'first_name', 'last_name',
+                  'email', 'tel', 'birthday', 'gender']
 
 
-# class CreateGroupMemberSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.Member
-#         fields = ['id', 'username']
-
-
-# # class RequestSerializer(serializers.ModelSerializer):
-# #     class Meta:
-# #         model = models.Request
-# #         fields = ('sender', 'action', 'state',
-# #                   'email', 'tel', 'birthday', 'gender', 'mygroup')
+class CreateGroupMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Member
+        fields = ['id', 'username']
 
 
 # class GroupmemberSerializer(serializers.ModelSerializer):

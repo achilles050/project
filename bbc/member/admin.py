@@ -6,3 +6,4 @@ from booking import models as bk_models
 admin.site.register(models.Member)
 admin.site.register(models.Group)
 admin.site.register(models.GroupMember)
+admin.site.register(models.Request)

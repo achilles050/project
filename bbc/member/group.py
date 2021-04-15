@@ -3,14 +3,14 @@ from . import models
 
 
 def group_mem_per(memberid, groupid):
-    q_gm = models.GroupMember.objects.filter(
+    q_m = models.GroupMember.objects.filter(
         group_id=groupid).filter(member_id=memberid).filter(role='m').exists()
-    q_g = models.Group.objects.filter(
-        header=memberid).filter(id=groupid).exists()
-    return q_gm or q_g
+    q_h = models.GroupMember.objects.filter(
+        group_id=groupid).filter(member_id=memberid).filter(role='h').exists()
+    return q_m or q_h
 
 
 def group_head_per(memberid, groupid):
-    q = models.Group.objects.filter(
-        header=memberid).filter(id=groupid).exists()
+    q = models.GroupMember.objects.filter(
+        group_id=groupid).filter(member_id=memberid).filter(role='h').exists()
     return q

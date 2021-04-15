@@ -24,6 +24,17 @@ from rest_framework.views import APIView
 
 
 class CheckRange(APIView):
+    def get(sself, request):
+        try:
+            q_allcourt = models.AllCourtInfo.objects.all()[0]
+            range_booking = q_allcourt.range_booking
+            dt_range = datetime.now() + range_booking
+            date_range = timezone.make_aware(dt_range).date()
+            return JsonResponse({'range': date_range}, status=200)
+        except Exception as e:
+            print(e)
+            return JsonResponse({'msg': 'error'}, status=400)
+
     def post(self, request):
         try:
             y = request.data['year']

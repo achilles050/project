@@ -7,6 +7,7 @@ from . import group
 
 from datetime import date
 import json
+import urllib.parse
 
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -89,8 +90,7 @@ class Login(APIView):
         auth = authenticate(username=username, password=password)
         if auth is not None:
             login(request, auth)
-            return JsonResponse({'username': username})
-            # return JsonResponse({'login successfully': f'HI {auth}'}, status=200)
+            return JsonResponse({'username': username}, status=200)
         else:
             return JsonResponse({'message': 'try again'}, status=404)
 
@@ -101,11 +101,11 @@ def Logout(request):
         print('going to logout')
         logout(request)
         print('logouted')
-        return JsonResponse({'message': 'logout successfully'}, status=200)
+        return JsonResponse({'msg': 'logout successfully'}, status=200)
         # return HttpResponse('ok logouted')
     except Exception as e:
         print(e)
-        return JsonResponse({'message': 'error'}, status=404)
+        return JsonResponse({'msg': 'error'}, status=404)
 
 
 def Test(request):
@@ -165,25 +165,22 @@ class Creategroup(APIView):
             return JsonResponse(mem_s.data, safe=False)
         except Exception as e:
             print(f'Error = {e}')
-            return JsonResponse({'message': 'Error (GET)'})
+            return JsonResponse({'msg': 'Error (GET)'})
 
     def post(self, request):
-        q_other = booking_models.OtherDetail.objects.get(pk=1)
-        number_creategroup = q_other.n_member_creategroup
+        q_allcourt = booking_models.AllCourtInfo.objects.all()[0]
+        number_creategroup = q_allcourt.num_of_creategroup
         if request.user.id is None:
-            return JsonResponse({'message': 'Login before create group'})
-        else:
-            pass
+            return JsonResponse({'msg': 'Login before create group'})
 
-        header = models.Member.objects.get(username=request.user)
-
+        q_header = models.Member.objects.get(username=request.user)
         member = request.data['member']
         group_name = request.data['group_name']
 
         print(len(member))
         print(number_creategroup)
         if len(member) != number_creategroup:
-            return JsonResponse({'message': f'Error create group with {number_creategroup} member!!!'})
+            return JsonResponse({'msg': f'Error create group with {number_creategroup} member!!!'})
 
         for value in member:
             if models.Member.objects.filter(username=value).exists():
@@ -191,36 +188,44 @@ class Creategroup(APIView):
             else:
                 return JsonResponse({'message': f'Error this user {value} not found'}, status=404)
 
-        obj, create = models.Group.objects.get_or_create(
-            group_name=group_name, header=header, is_active=True)
+        group_obj, create = models.Group.objects.get_or_create(
+            group_name=group_name, is_active=False)
 
         if not create:
-            return JsonResponse({'message': f'Error this group name {obj.group_name} exists '}, status=400)
+            return JsonResponse({'message': f'Error this group name {group_obj.group_name} exists '}, status=400)
+        else:
+            models.GroupMember.objects.get_or_create(
+                group=group_obj, member=q_header, role='h')
 
         for value in member:
             username = value
-            receiver = models.Member.objects.get(username=username)
+            q_receiver = models.Member.objects.get(username=username)
             models.Request.objects.create(
-                sender=header, receiver=receiver, action=0, group_id=obj.id)
-        return JsonResponse({'message': f'create group {obj.group_name} success waiting for accept from another member'})
+                group=group_obj, sender=q_header, receiver=q_receiver, action=0)
+        return JsonResponse({'msg': f'create group {group_obj.group_name} success waiting for accept from another member'})
 
 
 class AllGroup(APIView):
     def get(self, request):
         try:
-            query = models.Group.objects.filter(is_active=True)
+            query = models.Group.objects.filter(
+                is_active=True)
             d = dict()
             l = []
             for value in query:
                 q_group_member = models.GroupMember.objects.filter(
-                    group=value.id)
+                    group=value.id).filter(role='m')
+                q_header = models.GroupMember.objects.filter(
+                    group=value.id).filter(role='h')[0]
+
                 inner_list = []
                 for innner_value in q_group_member:
                     inner_list.append(innner_value.member.first_name)
 
                 l.append({'group_name': value.group_name,
-                          'header': value.header.first_name,
-                          'detail': value.outside_detail,
+                          'header': q_header.member.first_name,
+                          'detail': value.inside_detail if value.is_public is True else '',
+                          'public': value.is_public,
                           'member': inner_list
                           })
             d['data'] = l
@@ -233,6 +238,7 @@ class AllGroup(APIView):
 class MyGroup(APIView):
     def get(self, request, groupname):
         try:
+            groupname = urllib.parse.unquote_plus(groupname)
             mygroup = models.Group.objects.get(group_name=groupname)
             groupid = mygroup.id
             if group.group_mem_per(groupid=groupid, memberid=request.user.id):
@@ -242,7 +248,7 @@ class MyGroup(APIView):
                 else:
                     role = 'member'
             else:
-                detail = mygroup.outside_detail
+                detail = ''  # mygroup.outside_detail
                 if request.user.id is not None:
                     if models.GroupMember.objects.filter(role='j').filter(member_id=request.user.id).filter(
                             group_id=groupid).exists():
@@ -253,15 +259,18 @@ class MyGroup(APIView):
                     role = 'guest'
 
             q_group_member = models.GroupMember.objects.filter(
-                group_id=groupid)
+                group_id=groupid).filter(role='m')
+            q_group_header = models.GroupMember.objects.filter(
+                group_id=groupid).filter(role='h')[0]
             inner_list = []
             for innner_value in q_group_member:
                 inner_list.append(innner_value.member.first_name)
 
             d = dict()
             d = {'group_name': mygroup.group_name,
-                 'header': mygroup.header.first_name,
+                 'header': q_group_header.member.first_name,
                  'detail': detail,
+                 'public': mygroup.is_public,
                  'member': inner_list,
                  'role': role
                  }
@@ -320,7 +329,7 @@ class Request(APIView):
                     else:
                         msg = ''
                     l.append(
-                        {'id': i.id, 'sender': i.sender.first_name, 'msg': msg, 'group': i.group})
+                        {'id': i.id, 'sender': i.sender.first_name, 'msg': msg, 'group': i.group.group_name})
                 mydict['data'] = l
                 return JsonResponse(mydict)
             return HttpResponse('Pls login (GET)')
@@ -332,43 +341,57 @@ class Request(APIView):
         try:
             if request.user.id is not None:
                 myid = request.data['id']
+                accept = request.data['accept']
                 query = models.Request.objects.get(pk=myid)
                 q_group = models.Group.objects.get(pk=query.group_id)
                 if query.read == True:
                     return JsonResponse({'msg': 'try again'}, status=400)
                 if query.action == 0:  # accept create group
-                    if request.user.id == query.receiver.id:
-                        pass
-                    else:
-                        return JsonResponse({'msg': 'you not have permission'}, status=400)
-                    q_other = booking_models.OtherDetail.objects.get(pk=1)
-                    number_creategroup = q_other.n_member_creategroup
-                    mem = models.Member.objects.get(pk=query.receiver)
+                    if accept is True:
+                        if request.user.id == query.receiver.id:
+                            pass
+                        else:
+                            return JsonResponse({'msg': 'you not have permission'}, status=400)
+                        q_allcourt = booking_models.AllCourtInfo.objects.all()[
+                            0]
+                        number_creategroup = q_allcourt.num_of_creategroup
+                        mem = models.Member.objects.get(pk=query.receiver)
 
-                    obj, created = models.GroupMember.objects.get_or_create(
-                        group=q_group, member=mem, role='m')
-                    if created:
-                        q_group.count += 1
-                        q_group.save()
+                        obj, created = models.GroupMember.objects.get_or_create(
+                            group=q_group, member=mem, role='m')
+                        if created:
+                            query.read = 1
+                            query.save()
+                        print(len(models.GroupMember.objects.filter(role='m')))
+                        print(number_creategroup)
+                        if len(models.GroupMember.objects.filter(role='m')) == number_creategroup:
+                            q_group.is_active = True
+                            q_group.save()
+                    else:
                         query.read = 1
                         query.save()
 
-                    if q_group.count == number_creategroup:
-                        q_group.is_active = True
-                        q_group.save()
-
                 elif query.action == 1:  # accept join group
-                    if group.group_head_per(memberid=request.user.id, groupid=q_group.id):
-                        q_gm = models.GroupMember.objects.get(
-                            member_id=query.sender, group_id=q_group.id)
+                    if accept is True:
+                        if group.group_head_per(memberid=request.user.id, groupid=q_group.id):
+                            q_gm = models.GroupMember.objects.get(
+                                member_id=query.sender, group_id=q_group.id)
 
-                        if q_gm.role == 'j':
-                            q_gm.role = 'm'
-                            q_gm.save()
+                            if q_gm.role == 'j':
+                                q_gm.role = 'm'
+                                q_gm.save()
+                                query.read = 1
+                                query.save()
+                        else:
+                            return JsonResponse({'msg': 'you not have permission (header only)'}, status=400)
+                    else:
+                        if group.group_head_per(memberid=request.user.id, groupid=q_group.id):
+                            q_gm = models.GroupMember.objects.get(
+                                member_id=query.sender, group_id=q_group.id)
                             query.read = 1
                             query.save()
-                    else:
-                        return JsonResponse({'msg': 'you not have permission (header only)'}, status=400)
+                        else:
+                            return JsonResponse({'msg': 'you not have permission (header only)'}, status=400)
 
                 return JsonResponse({'msg': 'ok'})
             return JsonResponse({'msg': 'pls login'})
