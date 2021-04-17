@@ -187,6 +187,14 @@ class Booking(APIView):
 
 
 class Payment(APIView):
+    def get(self, request):
+        q = models.Payment.objects.all()
+        print(q)
+        s = serializers.PaymentSerializer(q, many=True)
+        print('pass')
+        d = dict({'data': s.data})
+        return JsonResponse(d)
+
     def post(self, request):
         all_bookingid = request.data['bookingid']
         otp = 1234  # request.data['otp']
@@ -220,3 +228,36 @@ class Payment(APIView):
             return JsonResponse({'message': 'confirm success'})
         else:
             return JsonResponse({'message': 'confirm unsuccess'}, status=400)
+
+
+class CheckPrice(APIView):
+    def post(self, request):
+        all_bookingid = request.data['bookingid']
+        booking_obj_list = []
+        pay = 0
+
+        for bookingid in all_bookingid:
+            now = timezone.make_aware(datetime.now())
+            q_bookingid = models.Booking.objects.filter(
+                exp_datetime__gt=now).filter(bookingid=bookingid).filter(payment_state=0).exists()
+
+            if q_bookingid:
+                q_booking = models.Booking.objects.get(bookingid=bookingid)
+                pay += q_booking.price_pay
+                booking_obj_list.append(q_booking)
+            else:
+                return JsonResponse({'message': 'error bookingid not available'}, status=404)
+        d = dict()
+        d['Bookingid'] = all_bookingid
+        d['price'] = pay
+        return JsonResponse(d)
+
+
+class HistoryPayment(APIView):
+    def get(self, request):
+        q = models.Payment.objects.all()
+        print(q)
+        s = serializers.PaymentSerializer(q, many=True)
+        print('pass')
+        d = dict({'data': s.data})
+        return JsonResponse(d)

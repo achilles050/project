@@ -19,3 +19,10 @@ class EachCourtInfoSerializer(serializers.ModelSerializer):
         model = models.EachCourtInfo
         fields = ('court_number', 'price_normal', 'price_ds_mem',
                   'price_ds_time', 'time_ds_start', 'time_ds_end')
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Payment
+        fields = ('__all__')

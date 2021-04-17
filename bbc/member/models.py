@@ -24,9 +24,9 @@ class GroupMember(models.Model):
     class Meta:
         db_table = 'bbc_groupmember'
     group = models.ForeignKey(
-        Group, on_delete=models.CASCADE, null=True, related_name='group')
+        Group, on_delete=models.CASCADE, null=True, related_name='groups')
     member = models.ForeignKey(
-        'Member', on_delete=models.CASCADE)
+        'Member', on_delete=models.CASCADE, related_name='members')
     # for show role in group h = header, m = member, j=join
     role = models.CharField(max_length=1, default='')
     on_court = models.BooleanField(default=False)
@@ -46,6 +46,9 @@ class Member(User):
     public = models.BooleanField(default=True)
     virtualid = models.CharField(
         max_length=8, default=randomint, unique=True)
+
+    def __str__(self):
+        return self.virtualid+' '+self.first_name
 
 
 class Request(models.Model):

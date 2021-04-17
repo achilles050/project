@@ -12,9 +12,11 @@ class MemberSerializer(serializers.ModelSerializer):
 
 
 class CreateGroupMemberSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = models.Member
-        fields = ['id', 'username']
+        # fields = ['id', 'username']
+        fields = ['virtualid', 'first_name']
 
 
 # class GroupmemberSerializer(serializers.ModelSerializer):
