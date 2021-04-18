@@ -10,8 +10,7 @@ class Group(models.Model):
     class Meta:
         db_table = 'bbc_group'
     group_name = models.CharField(max_length=100, unique=True)
-    outside_detail = models.CharField(max_length=500)
-    inside_detail = models.CharField(max_length=500)
+    announce = models.CharField(max_length=500)
     # change when pay to next month court to True(use cronjob check this change below)
     is_continue = models.BooleanField(default=False)
     # change when not pay next month(use cronjob to change) False = not use now(not show in list group)
@@ -24,7 +23,7 @@ class GroupMember(models.Model):
     class Meta:
         db_table = 'bbc_groupmember'
     group = models.ForeignKey(
-        Group, on_delete=models.CASCADE, null=True, related_name='groups')
+        Group, on_delete=models.CASCADE, null=True, related_name='groups', db_constraint=False)
     member = models.ForeignKey(
         'Member', on_delete=models.CASCADE, related_name='members')
     # for show role in group h = header, m = member, j=join
@@ -55,7 +54,8 @@ class Request(models.Model):
 
     class Meta:
         db_table = 'bbc_request'
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, null=True, db_constraint=False)
     sender = models.ForeignKey(
         Member, on_delete=models.CASCADE, related_name='sender')
     receiver = models.ForeignKey(
