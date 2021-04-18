@@ -276,10 +276,18 @@ class MyGroup(APIView):
                 group_id=groupid).filter(role='h')[0]
 
             member_list = []
-            for innner_value in q_group_member:
-                member_list.append({'id': innner_value.member.virtualid,
-                                    'firstname': innner_value.member.first_name
-                                    })
+
+            if role == 'header':
+                for innner_value in q_group_member:
+                    member_list.append({'id': innner_value.member.virtualid,
+                                        'firstname': innner_value.member.first_name,
+                                        'delete': False
+                                        })
+            else:
+                for innner_value in q_group_member:
+                    member_list.append({'id': innner_value.member.virtualid,
+                                        'firstname': innner_value.member.first_name
+                                        })
 
             d = dict()
             d = {'group_name': mygroup.group_name,
