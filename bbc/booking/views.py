@@ -186,8 +186,19 @@ class Booking(APIView):
         return HttpResponse('??????')
 
 
-class GroupBoking(APIView):
+class GroupBooking(APIView):
     def get(self, request):
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        q_headergroupmember = mem_models.GroupMember.objects.filter(
+            role='h').filter(member_id=request.user.id).exists()
+
+        if q_headergroupmember:
+            q_group = mem_models.Group.objects.get(
+                group_id=q_headergroupmember.group_id)
+        else:
+            return JsonResponse({'msg': 'You re not header'}, status=400)
+
         if not models.AllCourtInfo.objects.all()[0].force_close:
             get_date = request.GET.get('d', None)
             if get_date is not None:
@@ -222,13 +233,17 @@ class GroupBoking(APIView):
             data = dict({'date': strdate})
             data['status'] = l
             q_eachcourtinfo = models.EachCourtInfo.objects.all()
-            s_eachcourtinfo = serializers.EachCourtInfoSerializer(
+            s_eachcourtinfo = serializers.EachCourtInfo2Serializer(
                 q_eachcourtinfo, many=True)
             data['eachcourt_info'] = s_eachcourtinfo.data
+            models.Booking.objects.filter(group=q_group)
             mydata = {'msg': 'ok'}
             return JsonResponse(data)
         else:
             return JsonResponse({'status': 'close'})
+
+    def post(self, request):
+        pass
 
 
 class Payment(APIView):

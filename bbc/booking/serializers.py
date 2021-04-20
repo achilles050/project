@@ -21,6 +21,13 @@ class EachCourtInfoSerializer(serializers.ModelSerializer):
                   'price_ds_time', 'time_ds_start', 'time_ds_end')
 
 
+class EachCourtInfo2Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.EachCourtInfo
+        fields = ('court_number', 'price_normal', 'price_ds_group',
+                  'price_ds_time', 'time_ds_start', 'time_ds_end')
+
+
 class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:

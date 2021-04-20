@@ -163,7 +163,7 @@ class Creategroup(APIView):
             if request.user.id is None:
                 return JsonResponse({'msg': 'Login before create group'})
             mem_q = models.Member.objects.filter(
-                is_active=True).exclude(username=request.user)
+                is_active=True).filter(public=True).exclude(username=request.user)
             mem_s = s.CreateGroupMemberSerializer(mem_q, many=True)
             return JsonResponse(mem_s.data, safe=False)
         except Exception as e:
@@ -182,6 +182,9 @@ class Creategroup(APIView):
 
         if group_name == '':
             return JsonResponse({'msg': f'pls fill your group name!!!'}, status=400)
+
+        if models.GroupMember.objects.filter(role='h').exists():
+            return JsonResponse({'msg': f'Can not create group because you are header in another group'}, status=400)
 
         if len(member) != number_creategroup:
             return JsonResponse({'msg': f'Error create group with {number_creategroup} member!!!'}, status=400)
@@ -295,7 +298,7 @@ class MyGroup(APIView):
                  'header': q_group_header.member.first_name,
                  'public': mygroup.is_public,
                  'role': role,
-                 'detail': {}
+                 'detail': {"announce": "". "member": []}
                  }
 
             if mygroup.is_public is True or is_header or is_member:
