@@ -236,7 +236,7 @@ class GroupBooking(APIView):
             s_eachcourtinfo = serializers.EachCourtInfo2Serializer(
                 q_eachcourtinfo, many=True)
             data['eachcourt_info'] = s_eachcourtinfo.data
-            models.Booking.objects.filter(group=q_group)
+            # models.Booking.objects.filter(group=q_group).filter(booking_datetime__=)
             mydata = {'msg': 'ok'}
             return JsonResponse(data)
         else:

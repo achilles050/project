@@ -298,7 +298,7 @@ class MyGroup(APIView):
                  'header': q_group_header.member.first_name,
                  'public': mygroup.is_public,
                  'role': role,
-                 'detail': {"announce": "". "member": []}
+                 'detail': {"announce": "", "member": []}
                  }
 
             if mygroup.is_public is True or is_header or is_member:
