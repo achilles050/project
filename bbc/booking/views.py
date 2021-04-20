@@ -1,6 +1,7 @@
 import json
-from datetime import time, timedelta
+from datetime import time, timedelta, date
 from uuid import uuid4
+import calendar
 
 from . import models
 from . import book
@@ -61,10 +62,9 @@ class Booking(APIView):
             get_date = request.GET.get('d', None)
             if get_date is not None:
                 strdate = str(get_date)
-                date = datetime.strptime(strdate, '%Y%m%d').date()
+                mydate = datetime.strptime(strdate, '%Y%m%d').date()
             else:
-                date = datetime.now().date()
-            booking_q = models.Booking.objects.all()
+                mydate = datetime.now().date()
             time_q = models.AllCourtInfo.objects.all()[0]
             time_open = time_q.open_time.hour
             time_close = time_q.close_time.hour
@@ -90,7 +90,7 @@ class Booking(APIView):
                         l[i][str_court] = True
                     else:
                         l[i][str_court] = False
-            data = dict({'date': date})
+            data = dict({'date': mydate})
             data['status'] = l
             q_eachcourtinfo = models.EachCourtInfo.objects.all()
             s_eachcourtinfo = serializers.EachCourtInfoSerializer(
@@ -184,6 +184,51 @@ class Booking(APIView):
                 all_ds_time-all_ds_mem
             return JsonResponse(response_dict)
         return HttpResponse('??????')
+
+
+class GroupBoking(APIView):
+    def get(self, request):
+        if not models.AllCourtInfo.objects.all()[0].force_close:
+            get_date = request.GET.get('d', None)
+            if get_date is not None:
+                dayofweek = int(get_date)
+            else:
+                dayofweek = 0
+
+            dt_now = datetime.now()
+            date_nm = book.AddMonths(dt_now, 1)
+            day = calendar.monthcalendar(date_nm.year, date_nm.month)[
+                2][dayofweek]
+            mydate = date(date_nm.year, date_nm.month, day)
+            strdayofweek = calendar.day_name[dayofweek]
+
+            time_q = models.AllCourtInfo.objects.all()[0]
+            time_open = time_q.open_time.hour
+            time_close = time_q.close_time.hour
+            time = range(0, 24)
+            court_list = models.EachCourtInfo.objects.values_list(
+                "court_number", flat=True)
+            l = list()
+            for i, t in enumerate(time):
+                str_time = str('%02d:00' % t+'-'+'%02d:00' % (t+1))
+                l.append({'time': str_time})
+                for c in court_list:
+                    str_court = 'Court'+str(c)
+                    if book.check_valid_group(court=c, mytime=t, mydate=mydate):
+                        l[i][str_court] = True
+                    else:
+                        l[i][str_court] = False
+            strdate = str(mydate.year)+'-'+str(mydate.month)+'-'+strdayofweek
+            data = dict({'date': strdate})
+            data['status'] = l
+            q_eachcourtinfo = models.EachCourtInfo.objects.all()
+            s_eachcourtinfo = serializers.EachCourtInfoSerializer(
+                q_eachcourtinfo, many=True)
+            data['eachcourt_info'] = s_eachcourtinfo.data
+            mydata = {'msg': 'ok'}
+            return JsonResponse(data)
+        else:
+            return JsonResponse({'status': 'close'})
 
 
 class Payment(APIView):

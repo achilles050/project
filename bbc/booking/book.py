@@ -1,10 +1,16 @@
 from . import models
 from member.models import Member
-from datetime import time, datetime  # , timedelta
+from datetime import time, datetime, date  # , timedelta
 from django.core.mail import send_mail
 from django.utils import timezone
 
 # +timedelta(hours=1)
+
+
+def AddMonths(dt, d, m=1):
+    newmonth = (((dt.month - 1) + m) % 12) + 1
+    newyear = int(dt.year + (((dt.month - 1) + m) / 12))
+    return date(newyear, newmonth, d)
 
 
 def check_valid(court, mytime, mydate):  # time in hour unit
@@ -41,19 +47,53 @@ def check_valid(court, mytime, mydate):  # time in hour unit
         return None
 
 
-def booking(member, court, yourtime):
+def check_valid_group(court, mytime, mydate):  # time in hour unit
     try:
-        t = time(int(yourtime))
-        print(member)
-        print(t)
-        book = models.HistoryMember.objects.create(member=Member.objects.get(username=member), court=models.CourtDetail.objects.get(
-            court_number=court), time=t)  # state default = 0 >>> booking
-        book.save()
-        print('ok')
-        return True
+        dt = timezone.make_aware(datetime.combine(mydate, time(mytime)))
+        info = models.AllCourtInfo.objects.all()[0]
+        maintain = models.EachCourtInfo.objects.get(
+            court_number=court).is_maintain
+        now = datetime.now()
+        now_hour = timezone.make_aware(
+            datetime.combine(now.date(), time(now.hour)))
+        past = dt >= now_hour
+        twomonth = AddMonths(now, 1, m=2)
+        inrange = dt.date() < twomonth
+        valid = not models.Booking.objects.filter(
+            booking_datetime=dt).filter(court_id__court_number=court).filter(exp_datetime__gt=timezone.make_aware(datetime.now())).exists()
+        if info.open_time.hour > info.close_time.hour:
+            time_range = list(
+                range(info.close_time.hour, info.open_time.hour))
+            l = list(range(0, 24))
+            for value in time_range:
+                if value in l:
+                    l.remove(value)
+            time_range = l
+        else:
+            time_range = list(range(info.open_time.hour, info.close_time.hour))
+        if mytime in time_range and valid and not maintain and past and inrange:
+            return True
+        else:
+            return False
+
     except Exception as e:
-        print('error :', e)
-        return False
+        print('Error is : ', e)
+        return None
+
+
+# def booking(member, court, yourtime):
+#     try:
+#         t = time(int(yourtime))
+#         print(member)
+#         print(t)
+#         book = models.HistoryMember.objects.create(member=Member.objects.get(username=member), court=models.CourtDetail.objects.get(
+#             court_number=court), time=t)  # state default = 0 >>> booking
+#         book.save()
+#         print('ok')
+#         return True
+#     except Exception as e:
+#         print('error :', e)
+#         return False
 
 
 # def confirm(history):

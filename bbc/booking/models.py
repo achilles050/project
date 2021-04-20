@@ -74,7 +74,8 @@ class Payment(models.Model):
     class Meta:
         db_table = 'bbc_payment'
     paymentid = models.CharField(max_length=32, unique=True)
-    payment_otp = models.IntegerField()  # for write in your slip for easier checking
+    payment_pic = models.ImageField(
+        null=True, upload_to='payment_pic')  # for upload slip to server
     # time when send slip for checking can be approximate
     timestamp = models.DateTimeField(auto_now=True)
     pay = models.DecimalField(max_digits=5, decimal_places=2)

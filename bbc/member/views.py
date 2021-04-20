@@ -277,14 +277,16 @@ class MyGroup(APIView):
             member_list = []
 
             if role == 'header':
-                for innner_value in q_group_member:
-                    member_list.append({'id': innner_value.member.virtualid,
+                for i, innner_value in enumerate(q_group_member):
+                    member_list.append({'number': i+1,
+                                        'id': innner_value.member.virtualid,
                                         'firstname': innner_value.member.first_name,
                                         'delete': False
                                         })
             else:
-                for innner_value in q_group_member:
-                    member_list.append({'id': innner_value.member.virtualid,
+                for i, innner_value in enumerate(q_group_member):
+                    member_list.append({'number': i+1,
+                                        'id': innner_value.member.virtualid,
                                         'firstname': innner_value.member.first_name
                                         })
 
