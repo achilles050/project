@@ -86,7 +86,7 @@ class Booking(APIView):
                 l.append({'time': str_time})
                 for c in court_list:
                     str_court = 'Court'+str(c)
-                    if book.check_valid(court=c, mytime=t, mydate=date):
+                    if book.check_valid(court=c, mytime=t, mydate=mydate):
                         l[i][str_court] = True
                     else:
                         l[i][str_court] = False

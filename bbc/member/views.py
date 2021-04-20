@@ -380,9 +380,13 @@ class MyGroup(APIView):
 
                 if is_member or is_header:
                     if is_header:
-                        virtualid = request.data['id']
-                        member = models.Member.objects.get(virtualid=virtualid)
-                        msg = 'delete member'
+                        virtualid = request.GET.get('id', None)
+                        if virtualid is not None:
+                            member = models.Member.objects.get(
+                                virtualid=virtualid)
+                            msg = 'delete member'
+                        else:
+                            return JsonResponse({'msg': 'Error send not have membergroupid'}, status=400)
                     else:
                         member = models.Member.objects.get(id=request.user.id)
                         msg = 'leave group'
@@ -391,7 +395,7 @@ class MyGroup(APIView):
                     q_gm.delete()
                     return JsonResponse({'msg': f'{msg} successful'})
                 else:
-                    return JsonResponse({'msg': 'You dont have permission !!!'})
+                    return JsonResponse({'msg': 'You dont have permission !!!'}, status=400)
 
         except Exception as e:
             print(e)
