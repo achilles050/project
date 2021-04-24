@@ -1,6 +1,8 @@
 from django.db import models
 from member.models import Member, Group
 from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import datetime
 # Create your models here.
 
 
@@ -11,10 +13,15 @@ class AllCourtInfo(models.Model):
     force_close = models.BooleanField(default=False)  # for close allcourt
     range_booking = models.DurationField()  # range can booking before
     payment_member_duration = models.DurationField()  # must pay in this duration(mem)
-    payment_guest_duration = models.DurationField()  # must pay in this duration(g)
+    # must pay in this duration(guest)
+    payment_guest_duration = models.DurationField()
+    # must pay in this duration(group)
+    payment_group_duration = models.DurationField(null=True)
+    # group can book same last month this day
+    groupbooking_lastmonth_day = models.PositiveIntegerField(null=True)
     refund_duration = models.DurationField()  # refund duration only
     refund_percent = models.DecimalField(
-        max_digits=4, decimal_places=2)  # percent can refund in time
+        max_digits=5, decimal_places=2)  # percent can refund in time
     open_time = models.TimeField()
     close_time = models.TimeField()
     # use when member create group(not include header)
@@ -61,7 +68,8 @@ class Booking(models.Model):
         max_digits=5, decimal_places=2)  # each booking slot
     # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
     payment_state = models.IntegerField(default=0)
-    timestamp = models.DateTimeField(auto_now=True)  # time now when booking
+    timestamp = models.DateTimeField(
+        default=timezone.make_aware(datetime.now()))  # time now when booking
     # bookingid for identify your court was booked
     bookingid = models.CharField(max_length=32)
     # identify your payment (can repeated)
@@ -77,8 +85,9 @@ class Payment(models.Model):
     payment_pic = models.ImageField(
         null=True, upload_to='payment_pic')  # for upload slip to server
     # time when send slip for checking can be approximate
-    timestamp = models.DateTimeField(auto_now=True)
-    pay = models.DecimalField(max_digits=5, decimal_places=2)
+    timestamp = models.DateTimeField(
+        default=timezone.make_aware(datetime.now()))
+    pay = models.DecimalField(max_digits=10, decimal_places=2)
     # change when check success by admin
     is_checked = models.BooleanField(default=False)
     # changee when checking found transaction if not change state in booking table to 3
@@ -92,6 +101,6 @@ class Refund(models.Model):
         Payment, on_delete=models.CASCADE)
     detail = models.CharField(max_length=20)  # customer bankingid
     timestamp = models.DateTimeField(
-        auto_now=True)  # for check is in refund time
+        default=timezone.make_aware(datetime.now()))  # for check is in refund time
     is_refunded = models.BooleanField(
         default=False)  # change when refund success

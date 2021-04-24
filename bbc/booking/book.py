@@ -71,7 +71,8 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
             time_range = l
         else:
             time_range = list(range(info.open_time.hour, info.close_time.hour))
-        if mytime in time_range and valid and not maintain and past and inrange:
+
+        if mytime in time_range and valid and not maintain and True and inrange:
             return True
         else:
             return False
@@ -80,6 +81,27 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
         print('Error is : ', e)
         return None
 
+
+def check_valid_group_history(court, mytime, mydate):
+    try:
+        dt = timezone.make_aware(datetime.combine(mydate, time(mytime)))
+        valid = not models.Booking.objects.filter(booking_datetime=dt).filter(
+            court_id__court_number=court).filter(payment_state=1).exclude(group=None).exists()
+        return valid
+    except:
+        print('Error is : ', e)
+        return None
+
+
+def check_valid_group_history_for_booking(court, mydate, mytime, mygroup):
+    try:
+        dt = timezone.make_aware(datetime.combine(mydate, time(mytime)))
+        valid = models.Booking.objects.filter(booking_datetime=dt).filter(
+            court_id__court_number=court).filter(payment_state=1).filter(group=mygroup).exists()
+        return valid
+    except:
+        print('Error is : ', e)
+        return None
 
 # def booking(member, court, yourtime):
 #     try:

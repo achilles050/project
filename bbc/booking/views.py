@@ -56,6 +56,29 @@ class CheckRange(APIView):
             return JsonResponse({'msg': False}, status=404)
 
 
+class CheckPrice(APIView):
+    def post(self, request):
+        all_bookingid = request.data['bookingid']
+        booking_obj_list = []
+        pay = 0
+
+        for bookingid in all_bookingid:
+            now = timezone.make_aware(datetime.now())
+            q_bookingid = models.Booking.objects.filter(
+                exp_datetime__gt=now).filter(bookingid=bookingid).filter(payment_state=0).exists()
+
+            if q_bookingid:
+                q_booking = models.Booking.objects.get(bookingid=bookingid)
+                pay += q_booking.price_pay
+                booking_obj_list.append(q_booking)
+            else:
+                return JsonResponse({'message': 'error bookingid not available'}, status=404)
+        d = dict()
+        d['Bookingid'] = all_bookingid
+        d['price'] = pay
+        return JsonResponse(d)
+
+
 class Booking(APIView):
     def get(self, request):  # query status court
         if not models.AllCourtInfo.objects.all()[0].force_close:
@@ -65,9 +88,9 @@ class Booking(APIView):
                 mydate = datetime.strptime(strdate, '%Y%m%d').date()
             else:
                 mydate = datetime.now().date()
-            time_q = models.AllCourtInfo.objects.all()[0]
-            time_open = time_q.open_time.hour
-            time_close = time_q.close_time.hour
+            q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+            time_open = q_allcourtinfo.open_time.hour
+            time_close = q_allcourtinfo.close_time.hour
             time = range(0, 24)
             # if time_open > time_close:
             #     time = list(range(time_close, time_open))
@@ -80,18 +103,18 @@ class Booking(APIView):
             #     time = list(range(time_open, time_close))
             court_list = models.EachCourtInfo.objects.values_list(
                 "court_number", flat=True)
-            l = list()
+            status_list = list()
             for i, t in enumerate(time):
                 str_time = str('%02d:00' % t+'-'+'%02d:00' % (t+1))
-                l.append({'time': str_time})
+                status_list.append({'time': str_time})
                 for c in court_list:
                     str_court = 'Court'+str(c)
                     if book.check_valid(court=c, mytime=t, mydate=mydate):
-                        l[i][str_court] = True
+                        status_list[i][str_court] = True
                     else:
-                        l[i][str_court] = False
+                        status_list[i][str_court] = False
             data = dict({'date': mydate})
-            data['status'] = l
+            data['status'] = status_list
             q_eachcourtinfo = models.EachCourtInfo.objects.all()
             s_eachcourtinfo = serializers.EachCourtInfoSerializer(
                 q_eachcourtinfo, many=True)
@@ -120,7 +143,7 @@ class Booking(APIView):
             email = request.data['email']
             tel = request.data['phone']
             member = None
-            exp = q_allcourtinfo.payment_quest_duration
+            exp = q_allcourtinfo.payment_guest_duration
 
         strbooking_date = request.data['date']
         booking_date = datetime.strptime(strbooking_date, '%Y-%m-%d').date()
@@ -131,6 +154,7 @@ class Booking(APIView):
         for value in booking:
             court = int(value['column'][5:])
             mytime = int(value['time'][:2])
+
             if book.check_valid(court=court, mytime=mytime, mydate=booking_date):
                 booking_datetime = timezone.make_aware(
                     datetime.combine(booking_date, time(mytime)))
@@ -166,6 +190,9 @@ class Booking(APIView):
                 else:
                     booking_obj.delete()
                     break
+            else:
+                break
+
         if len(booking) != len(booking_obj_list):
             if len(booking_obj_list) != 0:
                 for value in booking_obj_list:
@@ -188,14 +215,17 @@ class Booking(APIView):
 
 class GroupBooking(APIView):
     def get(self, request):
+        print(datetime.now())
         if request.user.id is None:
             return JsonResponse({'msg': 'Pls login'})
-        q_headergroupmember = mem_models.GroupMember.objects.filter(
+        is_headergroupmember = mem_models.GroupMember.objects.filter(
             role='h').filter(member_id=request.user.id).exists()
 
-        if q_headergroupmember:
+        if is_headergroupmember:
+            q_headergroupmember = mem_models.GroupMember.objects.get(
+                role='h', member_id=request.user.id)
             q_group = mem_models.Group.objects.get(
-                group_id=q_headergroupmember.group_id)
+                id=q_headergroupmember.group_id)
         else:
             return JsonResponse({'msg': 'You re not header'}, status=400)
 
@@ -203,47 +233,302 @@ class GroupBooking(APIView):
             get_date = request.GET.get('d', None)
             if get_date is not None:
                 dayofweek = int(get_date)
+                dayrange = range(dayofweek, dayofweek+1)
             else:
                 dayofweek = 0
+                dayrange = range(0, 7)
 
-            dt_now = datetime.now()
+            dt_now = timezone.make_aware(datetime.now())
             date_nm = book.AddMonths(dt_now, 1)
-            day = calendar.monthcalendar(date_nm.year, date_nm.month)[
-                2][dayofweek]
-            mydate = date(date_nm.year, date_nm.month, day)
-            strdayofweek = calendar.day_name[dayofweek]
 
-            time_q = models.AllCourtInfo.objects.all()[0]
-            time_open = time_q.open_time.hour
-            time_close = time_q.close_time.hour
-            time = range(0, 24)
+            q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+            time_open = q_allcourtinfo.open_time.hour
+            time_close = q_allcourtinfo.close_time.hour
+            time24 = range(0, 24)
             court_list = models.EachCourtInfo.objects.values_list(
                 "court_number", flat=True)
-            l = list()
-            for i, t in enumerate(time):
-                str_time = str('%02d:00' % t+'-'+'%02d:00' % (t+1))
-                l.append({'time': str_time})
-                for c in court_list:
-                    str_court = 'Court'+str(c)
-                    if book.check_valid_group(court=c, mytime=t, mydate=mydate):
-                        l[i][str_court] = True
-                    else:
-                        l[i][str_court] = False
-            strdate = str(mydate.year)+'-'+str(mydate.month)+'-'+strdayofweek
-            data = dict({'date': strdate})
-            data['status'] = l
+            status_list = list()
+            history_groupbooking_list = list()
+
+            dt_now = timezone.make_aware(datetime.now())
+            gapday = q_allcourtinfo.groupbooking_lastmonth_day
+            gapdate = timezone.make_aware(
+                datetime(dt_now.year, dt_now.month, gapday))
+            if dt_now >= gapdate:
+                for intday, intday2 in enumerate(dayrange):
+                    day = calendar.monthcalendar(date_nm.year, date_nm.month)[
+                        1][intday2]
+                    mydate = date(date_nm.year, date_nm.month, day)
+                    weekday = mydate.strftime('%A')
+                    status_list.append({'weekday': weekday, 'status': {}})
+                    inner_status_list = list()
+
+                    for i, t in enumerate(time24):
+                        str_time = str('%02d:00' % t+'-'+'%02d:00' % (t+1))
+                        inner_status_list.append({'time': str_time})
+                        for c in court_list:
+                            str_court = 'Court'+str(c)
+                            if book.check_valid_group(court=c, mytime=t, mydate=mydate):
+                                inner_status_list[i][str_court] = True
+                            else:
+                                inner_status_list[i][str_court] = False
+                    status_list[intday]['status'] = inner_status_list
+
+            else:
+                for intday, intday2 in enumerate(dayrange):
+                    day = calendar.monthcalendar(date_nm.year, date_nm.month)[
+                        1][intday2]
+                    mydate = date(date_nm.year, date_nm.month, day)
+                    weekday = mydate.strftime('%A')
+                    status_list.append({'weekday': weekday, 'status': {}})
+                    inner_status_list = list()
+                    history_day = calendar.monthcalendar(dt_now.year, dt_now.month)[
+                        1][intday2]
+                    history_mydate = date(
+                        dt_now.year, dt_now.month, history_day)
+
+                    for i, t in enumerate(time24):
+                        str_time = str('%02d:00' % t+'-'+'%02d:00' % (t+1))
+                        inner_status_list.append({'time': str_time})
+                        for c in court_list:
+                            str_court = 'Court'+str(c)
+                            check_history = book.check_valid_group_history(
+                                court=c, mytime=t, mydate=history_mydate)
+                            if book.check_valid_group(court=c, mytime=t, mydate=mydate) and check_history:
+                                inner_status_list[i][str_court] = True
+                            else:
+                                inner_status_list[i][str_court] = False
+                    status_list[intday]['status'] = inner_status_list
+
+                mon = calendar.monthcalendar(dt_now.year, dt_now.month)[1][0]
+                sun = calendar.monthcalendar(dt_now.year, dt_now.month)[1][6]
+                day1 = date(dt_now.year, dt_now.month, mon)
+                day7 = date(dt_now.year, dt_now.month, sun)
+
+                dt0 = timezone.make_aware(datetime.combine(day1, time(0)))
+                dt23 = timezone.make_aware(datetime.combine(day7, time(23)))
+
+                history_groupbooking = models.Booking.objects.filter(group=q_group).filter(
+                    booking_datetime__gte=dt0).filter(booking_datetime__lte=dt23).filter(
+                    payment_state=1)
+
+                history_groupbooking = sorted(history_groupbooking, key=lambda x: (
+                    x.booking_datetime.date(), x.court.court_number, x.booking_datetime.time()))
+
+                for value in history_groupbooking:
+                    booked_dt = value.booking_datetime
+                    booked_hour = int(booked_dt.strftime('%H'))
+                    booked_t = str('%02d:00' % booked_hour+'-' +
+                                   '%02d:00' % (booked_hour+1))
+                    calendar.weekday(
+                        booked_dt.year, booked_dt.month, booked_dt.day)
+                    history_groupbooking_list.append({'weekday': booked_dt.strftime('%A'),
+                                                      'court': value.court.court_number,
+                                                      'time': booked_t})
+
+            stryear_month = mydate.strftime('%Y-%m')
             q_eachcourtinfo = models.EachCourtInfo.objects.all()
             s_eachcourtinfo = serializers.EachCourtInfo2Serializer(
                 q_eachcourtinfo, many=True)
+
+            data = dict()
+            data['date'] = {'year_month': stryear_month}
+            data['status'] = status_list
+            data['booking_history'] = history_groupbooking_list
             data['eachcourt_info'] = s_eachcourtinfo.data
-            # models.Booking.objects.filter(group=q_group).filter(booking_datetime__=)
-            mydata = {'msg': 'ok'}
+
+            print(datetime.now())
             return JsonResponse(data)
         else:
             return JsonResponse({'status': 'close'})
 
     def post(self, request):
-        pass
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        is_headergroupmember = mem_models.GroupMember.objects.filter(
+            role='h').filter(member_id=request.user.id).exists()
+
+        if is_headergroupmember:
+            q_headergroupmember = mem_models.GroupMember.objects.get(
+                role='h', member_id=request.user.id)
+            q_group = mem_models.Group.objects.get(
+                id=q_headergroupmember.group_id)
+            q_header = mem_models.Member.objects.get(id=request.user.id)
+        else:
+            return JsonResponse({'msg': 'You re not header'}, status=400)
+
+        year_month = request.data['year_month']
+        booking = request.data['arr']
+        dt_now = timezone.make_aware(datetime.now())
+
+        if book.AddMonths(dt_now.date(), 1) != datetime.strptime(year_month, '%Y-%m').date():
+            return JsonResponse({'msg': 'try again (year_month not correct)'})
+
+        booking_obj_list = list()
+        booking_date_list = list()
+        all_price_normal = 0
+        all_ds_time = 0
+        all_ds_group = 0
+
+        q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+        name = request.user.first_name
+        email = request.user.email
+        tel = q_header.tel
+        member = q_header
+        exp = q_allcourtinfo.payment_group_duration
+        gapday = q_allcourtinfo.groupbooking_lastmonth_day
+
+        dt_exp = dt_now + exp
+        gapdate = timezone.make_aware(
+            datetime(dt_now.year, dt_now.month, gapday))
+
+        if dt_now <= gapdate:  # for old groupbooking in this gap
+            for value in booking:
+                court = int(value['column'][5:])
+                mytime = int(value['time'][:2])
+
+                strday = value['weekday']
+                mydate = datetime.strptime(year_month, '%Y-%m').date()
+                day_of_week = list(calendar.day_name).index(strday)
+
+                thismonth_day = calendar.monthcalendar(
+                    dt_now.year, dt_now.month)[1][day_of_week]
+                thismonth_date = datetime(
+                    dt_now.year, dt_now.month, thismonth_day)
+                thismonth_date = timezone.make_aware(thismonth_date)
+
+                valid_history = book.check_valid_group_history(
+                    court=court, mydate=thismonth_date, mytime=mytime)
+                valid_yourhsitory = book.check_valid_group_history_for_booking(
+                    court=court, mydate=thismonth_date, mytime=mytime, mygroup=q_group)
+                valid_thismonth = valid_history or valid_yourhsitory
+
+                for day in calendar.monthcalendar(mydate.year, mydate.month):
+                    if day[day_of_week] != 0:
+                        booking_date = date(
+                            mydate.year, mydate.month, day[day_of_week])
+                        booking_date_list.append(booking_date)
+                        book.check_valid_group(
+                            court=court, mytime=mytime, mydate=booking_date)
+                        if book.check_valid_group(court=court, mytime=mytime, mydate=booking_date) and valid_thismonth:
+                            booking_datetime = timezone.make_aware(
+                                datetime.combine(booking_date, time(mytime)))
+                            bookingid = uuid4().hex
+                            q_court = models.EachCourtInfo.objects.get(
+                                court_number=court)
+                            price_normal = q_court.price_normal
+                            ds_group = q_court.price_ds_group
+                            ds_time = q_court.price_ds_time
+                            ds_time_start = q_court.time_ds_start.hour
+                            ds_time_end = q_court.time_ds_end.hour
+
+                            if not mytime in range(int(ds_time_start), int(ds_time_end)):
+                                ds_time = 0
+
+                            booking_obj, booking_created = models.Booking.objects.get_or_create(
+                                name=name,
+                                email=email,
+                                tel=tel,
+                                member=member,
+                                group=q_group,
+                                court=q_court,
+                                booking_datetime=booking_datetime,
+                                exp_datetime=dt_exp,
+                                price_normal=price_normal,
+                                price_ds=ds_group+ds_time,
+                                price_pay=price_normal-ds_group-ds_time,
+                                bookingid=bookingid)
+
+                            if booking_created:
+                                booking_obj_list.append(booking_obj)
+                                all_price_normal += price_normal
+                                all_ds_group += ds_group
+                                all_ds_time += ds_time
+                            else:
+                                booking_obj.delete()
+                                break
+                        else:
+                            break
+                else:
+                    continue
+                break
+        else:
+            for value in booking:
+                court = int(value['column'][5:])
+                mytime = int(value['time'][:2])
+
+                strday = value['weekday']
+                mydate = datetime.strptime(year_month, '%Y-%m').date()
+                day_of_week = list(calendar.day_name).index(strday)
+
+                for day in calendar.monthcalendar(mydate.year, mydate.month):
+                    if day[day_of_week] != 0:
+                        booking_date = date(
+                            mydate.year, mydate.month, day[day_of_week])
+                        booking_date_list.append(booking_date)
+
+                        if book.check_valid_group(court=court, mytime=mytime, mydate=booking_date):
+                            booking_datetime = timezone.make_aware(
+                                datetime.combine(booking_date, time(mytime)))
+                            bookingid = uuid4().hex
+                            q_court = models.EachCourtInfo.objects.get(
+                                court_number=court)
+                            price_normal = q_court.price_normal
+                            ds_group = q_court.price_ds_group
+                            ds_time = q_court.price_ds_time
+                            ds_time_start = q_court.time_ds_start.hour
+                            ds_time_end = q_court.time_ds_end.hour
+
+                            if not mytime in range(int(ds_time_start), int(ds_time_end)):
+                                ds_time = 0
+
+                            booking_obj, booking_created = models.Booking.objects.get_or_create(
+                                name=name,
+                                email=email,
+                                tel=tel,
+                                member=member,
+                                group=q_group,
+                                court=q_court,
+                                booking_datetime=booking_datetime,
+                                exp_datetime=dt_exp,
+                                price_normal=price_normal,
+                                price_ds=ds_group+ds_time,
+                                price_pay=price_normal-ds_group-ds_time,
+                                bookingid=bookingid)
+
+                            if booking_created:
+                                booking_obj_list.append(booking_obj)
+                                all_price_normal += price_normal
+                                all_ds_group += ds_group
+                                all_ds_time += ds_time
+                            else:
+                                booking_obj.delete()
+                                break
+                        else:
+                            break
+                else:
+                    continue
+                break
+
+        if len(booking_date_list) != len(booking_obj_list):
+            if len(booking_obj_list) != 0:
+                myi = 1
+                for value in booking_obj_list:
+                    value.delete()
+            return JsonResponse({'success': False})
+        else:
+            response_dict = dict()
+            response_dict['success'] = True
+            response_dict['bookingid'] = [
+                value.bookingid for value in booking_obj_list]
+            response_dict['price'] = {}
+            response_dict['price']['normal_price'] = all_price_normal
+            response_dict['price']['discount_time'] = all_ds_time
+            response_dict['price']['discount_group'] = all_ds_group
+            response_dict['price']['pay'] = all_price_normal - \
+                all_ds_time-all_ds_group
+            return JsonResponse(response_dict)
+        return HttpResponse('??????')
 
 
 class Payment(APIView):
@@ -271,11 +556,10 @@ class Payment(APIView):
                 pay += q_booking.price_pay
                 booking_obj_list.append(q_booking)
             else:
-                return JsonResponse({'message': 'error bookingid not available'}, status=404)
+                return JsonResponse({'message': f'error bookingid {bookingid} not available'}, status=404)
 
         payment_obj, payment_created = models.Payment.objects.get_or_create(
             paymentid=uuid4().hex,
-            payment_otp=otp,
             pay=pay)
 
         if payment_created:
@@ -288,29 +572,6 @@ class Payment(APIView):
             return JsonResponse({'message': 'confirm success'})
         else:
             return JsonResponse({'message': 'confirm unsuccess'}, status=400)
-
-
-class CheckPrice(APIView):
-    def post(self, request):
-        all_bookingid = request.data['bookingid']
-        booking_obj_list = []
-        pay = 0
-
-        for bookingid in all_bookingid:
-            now = timezone.make_aware(datetime.now())
-            q_bookingid = models.Booking.objects.filter(
-                exp_datetime__gt=now).filter(bookingid=bookingid).filter(payment_state=0).exists()
-
-            if q_bookingid:
-                q_booking = models.Booking.objects.get(bookingid=bookingid)
-                pay += q_booking.price_pay
-                booking_obj_list.append(q_booking)
-            else:
-                return JsonResponse({'message': 'error bookingid not available'}, status=404)
-        d = dict()
-        d['Bookingid'] = all_bookingid
-        d['price'] = pay
-        return JsonResponse(d)
 
 
 class HistoryPayment(APIView):
