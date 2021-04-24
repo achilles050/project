@@ -72,7 +72,7 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
         else:
             time_range = list(range(info.open_time.hour, info.close_time.hour))
 
-        if mytime in time_range and valid and not maintain and True and inrange:
+        if mytime in time_range and valid and not maintain and past and inrange:
             return True
         else:
             return False
