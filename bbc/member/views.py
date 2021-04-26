@@ -4,8 +4,9 @@ from . import serializers as s
 from .form import LoginForm
 from . import token
 from . import group
+from booking.book import AddMonths
 
-from datetime import date
+from datetime import date, datetime, time
 import json
 import urllib.parse
 
@@ -15,6 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt  # csrf_clear
 from django.contrib.auth import authenticate, login, logout, get_user
 from django.http.response import JsonResponse
+from django.utils import timezone
 
 from django.views import View
 from django.views.generic import ListView
@@ -278,32 +280,44 @@ class MyGroup(APIView):
                 group_id=groupid).filter(role='h')[0]
 
             member_list = []
+            announce = ""
+            groupbooking_list = []
 
-            if role == 'header':
-                for i, innner_value in enumerate(q_group_member):
-                    member_list.append({'number': i+1,
-                                        'id': innner_value.member.virtualid,
-                                        'firstname': innner_value.member.first_name,
-                                        'delete': False
-                                        })
-            else:
-                for i, innner_value in enumerate(q_group_member):
-                    member_list.append({'number': i+1,
-                                        'id': innner_value.member.virtualid,
-                                        'firstname': innner_value.member.first_name
-                                        })
+            if mygroup.is_public is True or is_header or is_member:
+                if role == 'header':
+                    announce = mygroup.announce
+                    print(mygroup.id)
+                    print(request.user.id)
+                    for i, innner_value in enumerate(q_group_member):
+                        member_list.append({'number': i+1,
+                                            'id': innner_value.member.virtualid,
+                                            'firstname': innner_value.member.first_name,
+                                            'delete': False
+                                            })
+                else:
+                    for i, innner_value in enumerate(q_group_member):
+                        member_list.append({'number': i+1,
+                                            'id': innner_value.member.virtualid,
+                                            'firstname': innner_value.member.first_name
+                                            })
+
+                date_now = datetime.now().date()
+                date_nextmonth = AddMonths(date_now, 1)
+
+                thismonth_booking_list = group.group_booking_by_date(
+                    mydate=date_now, mygroup=mygroup)
+                nextmonth_booking_list = group.group_booking_by_date(
+                    mydate=date_nextmonth, mygroup=mygroup)
 
             d = dict()
             d = {'group_name': mygroup.group_name,
                  'header': q_group_header.member.first_name,
                  'public': mygroup.is_public,
                  'role': role,
-                 'detail': {"announce": "", "member": []}
+                 'detail': {"announce": announce, "member": member_list,
+                            "groupbooking": {"this_month": thismonth_booking_list,
+                                             "next_month": nextmonth_booking_list}}
                  }
-
-            if mygroup.is_public is True or is_header or is_member:
-                d['detail']['announce'] = mygroup.announce
-                d['detail']['member'] = member_list
 
             return JsonResponse(d)
         except Exception as e:

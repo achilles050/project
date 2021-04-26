@@ -55,9 +55,10 @@ class Booking(models.Model):
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, null=True)  # null if guest
     # null if not group booking
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, null=True, db_constraint=False)
     court = models.ForeignKey(
-        EachCourtInfo, on_delete=models.CASCADE)  # what court
+        EachCourtInfo, on_delete=models.CASCADE, db_constraint=False)  # what court
     booking_datetime = models.DateTimeField()  # datetime booking
     exp_datetime = models.DateTimeField()  # for pay in this time
     price_normal = models.DecimalField(
@@ -88,6 +89,10 @@ class Payment(models.Model):
     timestamp = models.DateTimeField(
         default=timezone.make_aware(datetime.now()))
     pay = models.DecimalField(max_digits=10, decimal_places=2)
+    member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, null=True, db_constraint=False)
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, null=True, db_constraint=False)
     # change when check success by admin
     is_checked = models.BooleanField(default=False)
     # changee when checking found transaction if not change state in booking table to 3
@@ -98,7 +103,7 @@ class Refund(models.Model):
     class Meta:
         db_table = 'bbc_refund'
     payment = models.ForeignKey(
-        Payment, on_delete=models.CASCADE)
+        Payment, on_delete=models.CASCADE, db_constraint=False)
     detail = models.CharField(max_length=20)  # customer bankingid
     timestamp = models.DateTimeField(
         default=timezone.make_aware(datetime.now()))  # for check is in refund time

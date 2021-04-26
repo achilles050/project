@@ -102,7 +102,7 @@ class Booking(APIView):
             # else:
             #     time = list(range(time_open, time_close))
             court_list = models.EachCourtInfo.objects.values_list(
-                "court_number", flat=True)
+                "court_number", flat=True).order_by('court_number')
             status_list = list()
             for i, t in enumerate(time):
                 str_time = str('%02d:00' % t+'-'+'%02d:00' % (t+1))
@@ -246,7 +246,7 @@ class GroupBooking(APIView):
             time_close = q_allcourtinfo.close_time.hour
             time24 = range(0, 24)
             court_list = models.EachCourtInfo.objects.values_list(
-                "court_number", flat=True)
+                "court_number", flat=True).order_by('court_number')
             status_list = list()
             history_groupbooking_list = list()
 
@@ -333,6 +333,7 @@ class GroupBooking(APIView):
 
             data = dict()
             data['date'] = {'year_month': stryear_month}
+            data['group'] = q_group.group_name
             data['status'] = status_list
             data['booking_history'] = history_groupbooking_list
             data['eachcourt_info'] = s_eachcourtinfo.data
@@ -533,18 +534,55 @@ class GroupBooking(APIView):
 
 class Payment(APIView):
     def get(self, request):
-        q = models.Payment.objects.all()
-        print(q)
-        s = serializers.PaymentSerializer(q, many=True)
-        print('pass')
-        d = dict({'data': s.data})
-        return JsonResponse(d)
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'}, status=404)
+
+        action = request.GET.get('q', None)
+        if action == 'group':
+            is_headergroupmember = mem_models.GroupMember.objects.filter(
+                role='h').filter(member_id=request.user.id).exists()
+
+            if is_headergroupmember:
+                q_headergroupmember = mem_models.GroupMember.objects.get(
+                    role='h', member_id=request.user.id)
+                q_group = mem_models.Group.objects.get(
+                    id=q_headergroupmember.group_id)
+                q_payment = models.Payment.objects.filter(group=q_group)
+            else:
+                return JsonResponse({'msg': 'You re not header'}, status=400)
+
+        else:
+            q_mem = mem_models.Member.objects.get(id=request.user.id)
+            q_payment = models.Payment.objects.filter(
+                member=q_mem).filter(group=None)
+        s_payment = serializers.PaymentSerializer(q_payment, many=True)
+        d_payment = dict({'data': s_payment.data})
+        return JsonResponse(d_payment)
 
     def post(self, request):
         all_bookingid = request.data['bookingid']
-        otp = 1234  # request.data['otp']
+        is_groupbooking = request.data['group']
         booking_obj_list = []
         pay = 0
+        if is_groupbooking:
+            if request.user.id is None:
+                return JsonResponse({'msg': 'Pls login'})
+            is_headergroupmember = mem_models.GroupMember.objects.filter(
+                role='h').filter(member_id=request.user.id).exists()
+
+            if is_headergroupmember:
+                q_headergroupmember = mem_models.GroupMember.objects.get(
+                    role='h', member_id=request.user.id)
+                q_group = mem_models.Group.objects.get(
+                    id=q_headergroupmember.group_id)
+            else:
+                return JsonResponse({'msg': 'You re not header'}, status=400)
+        else:
+            if request.user.id is not None:
+                member = mem_models.Member.objects.get(id=request.user.id)
+            else:
+                member = None
+            q_group = None
 
         for bookingid in all_bookingid:
             now = timezone.make_aware(datetime.now())
@@ -560,7 +598,9 @@ class Payment(APIView):
 
         payment_obj, payment_created = models.Payment.objects.get_or_create(
             paymentid=uuid4().hex,
-            pay=pay)
+            pay=pay,
+            member=member,
+            group=q_group)
 
         if payment_created:
             for value in booking_obj_list:

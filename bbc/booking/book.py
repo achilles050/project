@@ -59,6 +59,8 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
         past = dt >= now_hour
         twomonth = AddMonths(now, 1, m=2)
         inrange = dt.date() < twomonth
+        inrange_member = not dt <= timezone.make_aware(
+            datetime.now() + info.range_booking)
         valid = not models.Booking.objects.filter(
             booking_datetime=dt).filter(court_id__court_number=court).filter(exp_datetime__gt=timezone.make_aware(datetime.now())).exists()
         if info.open_time.hour > info.close_time.hour:
@@ -72,7 +74,7 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
         else:
             time_range = list(range(info.open_time.hour, info.close_time.hour))
 
-        if mytime in time_range and valid and not maintain and True and inrange:
+        if mytime in time_range and valid and not maintain and past and inrange and inrange_member:
             return True
         else:
             return False
