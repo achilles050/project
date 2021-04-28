@@ -362,8 +362,8 @@ class GroupBooking(APIView):
         booking = request.data['arr']
         dt_now = timezone.make_aware(datetime.now())
 
-        if book.AddMonths(dt_now.date(), 1) != datetime.strptime(year_month, '%Y-%m').date():
-            return JsonResponse({'msg': 'try again (year_month not correct)'})
+        # if book.AddMonths(dt_now.date(), 1) != datetime.strptime(year_month, '%Y-%m').date():
+        #     return JsonResponse({'msg': 'try again (year_month not correct)'})
 
         booking_obj_list = list()
         booking_date_list = list()
@@ -464,11 +464,14 @@ class GroupBooking(APIView):
 
                 for day in calendar.monthcalendar(mydate.year, mydate.month):
                     if day[day_of_week] != 0:
+                        print('pass')
                         booking_date = date(
                             mydate.year, mydate.month, day[day_of_week])
                         booking_date_list.append(booking_date)
 
                         if book.check_valid_group(court=court, mytime=mytime, mydate=booking_date):
+                            print(book.check_valid_group(court=court,
+                                                         mytime=mytime, mydate=booking_date))
                             booking_datetime = timezone.make_aware(
                                 datetime.combine(booking_date, time(mytime)))
                             bookingid = uuid4().hex
@@ -564,6 +567,7 @@ class Payment(APIView):
         is_groupbooking = request.data['group']
         booking_obj_list = []
         pay = 0
+        print(is_groupbooking)
         if is_groupbooking:
             if request.user.id is None:
                 return JsonResponse({'msg': 'Pls login'})
@@ -575,15 +579,17 @@ class Payment(APIView):
                     role='h', member_id=request.user.id)
                 q_group = mem_models.Group.objects.get(
                     id=q_headergroupmember.group_id)
+                member = q_headergroupmember.member
             else:
                 return JsonResponse({'msg': 'You re not header'}, status=400)
+
         else:
             if request.user.id is not None:
                 member = mem_models.Member.objects.get(id=request.user.id)
             else:
                 member = None
             q_group = None
-
+        print(member)
         for bookingid in all_bookingid:
             now = timezone.make_aware(datetime.now())
             q_bookingid = models.Booking.objects.filter(
