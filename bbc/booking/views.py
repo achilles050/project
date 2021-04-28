@@ -464,11 +464,14 @@ class GroupBooking(APIView):
 
                 for day in calendar.monthcalendar(mydate.year, mydate.month):
                     if day[day_of_week] != 0:
+                        print('pass')
                         booking_date = date(
                             mydate.year, mydate.month, day[day_of_week])
                         booking_date_list.append(booking_date)
 
                         if book.check_valid_group(court=court, mytime=mytime, mydate=booking_date):
+                            print(book.check_valid_group(court=court,
+                                                         mytime=mytime, mydate=booking_date))
                             booking_datetime = timezone.make_aware(
                                 datetime.combine(booking_date, time(mytime)))
                             bookingid = uuid4().hex
@@ -564,6 +567,7 @@ class Payment(APIView):
         is_groupbooking = request.data['group']
         booking_obj_list = []
         pay = 0
+        print(is_groupbooking)
         if is_groupbooking:
             if request.user.id is None:
                 return JsonResponse({'msg': 'Pls login'})
