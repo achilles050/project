@@ -362,8 +362,8 @@ class GroupBooking(APIView):
         booking = request.data['arr']
         dt_now = timezone.make_aware(datetime.now())
 
-        if book.AddMonths(dt_now.date(), 1) != datetime.strptime(year_month, '%Y-%m').date():
-            return JsonResponse({'msg': 'try again (year_month not correct)'})
+        # if book.AddMonths(dt_now.date(), 1) != datetime.strptime(year_month, '%Y-%m').date():
+        #     return JsonResponse({'msg': 'try again (year_month not correct)'})
 
         booking_obj_list = list()
         booking_date_list = list()
@@ -575,15 +575,16 @@ class Payment(APIView):
                     role='h', member_id=request.user.id)
                 q_group = mem_models.Group.objects.get(
                     id=q_headergroupmember.group_id)
+                member = q_headergroupmember.member
             else:
                 return JsonResponse({'msg': 'You re not header'}, status=400)
+
         else:
             if request.user.id is not None:
                 member = mem_models.Member.objects.get(id=request.user.id)
             else:
                 member = None
             q_group = None
-
         for bookingid in all_bookingid:
             now = timezone.make_aware(datetime.now())
             q_bookingid = models.Booking.objects.filter(
