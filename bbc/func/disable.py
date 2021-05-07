@@ -1,10 +1,15 @@
 from rest_framework.authentication import SessionAuthentication
+from django.utils.deprecation import MiddlewareMixin
 
 
-class DisableCSRF(object):
+class DisableCSRF(MiddlewareMixin):
     def process_request(self, request):
         setattr(request, '_dont_enforce_csrf_checks', True)
-        return
+
+# class DisableCSRF(object):
+#     def process_request(self, request):
+#         setattr(request, '_dont_enforce_csrf_checks', True)
+#         return
 
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):

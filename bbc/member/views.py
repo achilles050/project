@@ -2,14 +2,17 @@ from . import models
 from booking import models as booking_models
 from . import serializers as s
 from .form import LoginForm
-from . import token
+from .token import account_activation_token
 from . import group
+from func.disable import DisableCSRF
+
 from booking.book import AddMonths
 
 from datetime import date, datetime, time
 import json
 import urllib.parse
 
+from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
@@ -17,10 +20,20 @@ from django.views.decorators.csrf import csrf_exempt  # csrf_clear
 from django.contrib.auth import authenticate, login, logout, get_user
 from django.http.response import JsonResponse
 from django.utils import timezone
+from django.urls import reverse_lazy
+
+from django.contrib.auth.tokens import default_token_generator
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+
+from django.contrib.auth.views import PasswordResetView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from django.views import View
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
@@ -29,6 +42,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.shortcuts import get_object_or_404
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
 
 # Create your views here.
 
@@ -82,6 +97,88 @@ def Register(request):
         return HttpResponse('Try Again!!!')
 
 
+class Register2(APIView):
+    def post(self, request):
+        data = request.data
+        username = data['username']
+        password = data['password']
+        email = data['email']
+        try:
+            user = models.Member.objects.create_user(
+                username=username, password=password, email=email, is_active=False)
+        except:
+            user = models.Member.objects.get(username=username)
+            # return JsonResponse({'msg': 'Try again!!!'})
+
+        context = {
+            'user': username+settings.DEFAULT_FROM_EMAIL,
+            'email': email,
+            'protocol': 'https' if request.is_secure() else "http",
+            'domain': request.get_host(),
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': account_activation_token.make_token(user)
+        }
+        print(settings.DEFAULT_FROM_EMAIL)
+        html = render_to_string('registration/activate_email.html', context)
+        # text = render_to_string('registration/activate_email.txt', context)
+        send_mail(
+            'Verify email to Activate your account',
+            message=None,
+            html_message=html,
+            recipient_list=[email],
+            from_email=None,
+            fail_silently=False,
+        )
+        return JsonResponse({'msg': 'Register Success Pls activate your email'})
+
+
+class ActivateEmail(APIView):
+    def get(self, request, uidb64, token):
+        uid = urlsafe_base64_decode(uidb64).decode()
+        try:
+            user = models.Member.objects.get(pk=uid)
+        except:
+            return JsonResponse({'msg': 'Try again!!!'})
+        if account_activation_token.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return JsonResponse({'msg': 'Activate Email Success'})
+        else:
+            return JsonResponse({'msg': 'Link not correct'})
+
+
+class ResetPassword(APIView):
+    def post(self, request):
+        data = request.data
+        email = data['email']
+        try:
+            user = models.Member.objects.get(email=email)
+        except:
+            return JsonResponse({'msg': 'Try again!!!'})
+
+        context = {
+            'user': username+settings.DEFAULT_FROM_EMAIL,
+            'email': email,
+            'protocol': 'https' if request.is_secure() else "http",
+            'domain': request.get_host(),
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': account_activation_token.make_token(user)
+        }
+
+        print(settings.DEFAULT_FROM_EMAIL)
+        html = render_to_string('registration/activate_email.html', context)
+        # text = render_to_string('registration/activate_email.txt', context)
+        send_mail(
+            'Reset Password',
+            message=None,
+            html_message=html,
+            recipient_list=[email],
+            from_email=None,
+            fail_silently=False,
+        )
+        return JsonResponse({'msg': 'Pls check your email to do next step'})
+
+
 class Login(APIView):
     def get(self, request):
         return render(request, 'login.html', {'form': LoginForm})
@@ -112,23 +209,103 @@ def Logout(request):
 
 def Test(request):
     try:
+        print(request.is_secure())
+        # user = get_object_or_404(models.Member, username='thorn')
+        # mytoken1 = token.account_activation_token.make_token(user)
+        # print(user.first_name)
+        # print(mytoken1)
+        # print(type(mytoken1))
+        # print(token.account_activation_token.check_token(user, mytoken1))
+
         user = get_object_or_404(models.Member, username='thorn')
         mytoken1 = token.account_activation_token.make_token(user)
-        print(user)
+        print(user.first_name)
         print(mytoken1)
         print(type(mytoken1))
-        print(token.account_activation_token.check_token(user, mytoken1))
+        print(token.default_token_generator.check_token(user, mytoken1))
 
         mytoken2 = token.default_token_generator.make_token(user)
         print(user)
         print(mytoken2)
         print(type(mytoken2))
-        print(token.default_token_generator.check_token(user, mytoken2))
+        print(default_token_generator.check_token(user, mytoken2))
+
+        print(token.default_token_generator.make_token(user))
+
+        # mytoken2 = token.default_token_generator.make_token(user)
+        # print(user)
+        # print(mytoken2)
+        # print(type(mytoken2))
+        # print(token.default_token_generator.check_token(user, mytoken2))
 
         return HttpResponse('ok', status=200)
     except Exception as e:
         print(f'Error = {e}')
         return HttpResponse('error')
+
+
+def password_reset_done(request):
+    return JsonResponse({'msg': 'ok'}, status=200)
+
+
+class ProcessFormView(APIView, View):
+    """Render a form on GET and processes it on POST."""
+
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests: instantiate a blank version of the form."""
+        return self.render_to_response(self.get_context_data())
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST requests: instantiate a form instance with the passed
+        POST variables and then check if it's valid.
+        """
+        # form = request, data['email']
+        form = self.get_form()
+        print(form)
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    # PUT is a valid HTTP verb for creating (with a known URL) or editing an
+    # object, note that browsers only support POST for now.
+    def put(self, *args, **kwargs):
+        return self.post(*args, **kwargs)
+
+
+class TestClass(PasswordResetView):
+    # email_template_name = None  # 'registration/password_reset_email.html'
+    # extra_email_context = None
+    # form_class = None  # PasswordResetForm
+    # from_email = None
+    # html_email_template_name = None
+    # subject_template_name = 'registration/password_reset_subject.txt'
+    # success_url = reverse_lazy('password_reset_done')
+    # template_name = 'registration/password_reset_form.html'
+    # title = _('Password reset')
+    token_generator = default_token_generator
+
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    # @method_decorator(csrf_exempt)
+    def form_valid(self, form):
+        opts = {
+            'use_https': self.request.is_secure(),
+            'token_generator': self.token_generator,
+            'from_email': self.from_email,
+            'email_template_name': self.email_template_name,
+            'subject_template_name': self.subject_template_name,
+            'request': self.request,
+            'html_email_template_name': self.html_email_template_name,
+            'extra_email_context': self.extra_email_context,
+        }
+        form.save(**opts)
+        return super().form_valid(form)
+
+
+INTERNAL_RESET_SESSION_TOKEN = '_password_reset_token'
 
 
 class Profile(APIView):
@@ -138,11 +315,11 @@ class Profile(APIView):
                 print(f'This is {request.user} profile')
                 member = models.Member.objects.get(pk=request.user.id)
                 mem_serializer = s.MemberSerializer(member)
-                return JsonResponse(mem_serializer.data, safe=False)
+                return JsonResponse(mem_serializer.data)
             return JsonResponse({'message': 'Pls login. (GET)'})
         except Exception as e:
             print(f'Error {e}')
-            return JsonResponse({'message': 'Error(GET)'}, safe=False)
+            return JsonResponse({'message': 'Error(GET)'})
 
     def put(self, request):
         try:
@@ -152,11 +329,11 @@ class Profile(APIView):
                     member_obj, data=request.data)
                 if mem_serializer.is_valid():
                     mem_serializer.save()
-                    return JsonResponse(mem_serializer.data, safe=False)
-                return JsonResponse({'message': 'NOT CHANGE (POST)'}, safe=False)
+                    return JsonResponse(mem_serializer.data)
+                return JsonResponse({'message': 'NOT CHANGE'})
         except Exception as e:
             print(f'Error {e}')
-            return JsonResponse({'message': 'Error(POST)'}, safe=False)
+            return JsonResponse({'message': 'Error(POST)'})
 
 
 class Creategroup(APIView):
@@ -284,10 +461,8 @@ class MyGroup(APIView):
             groupbooking_list = []
 
             if mygroup.is_public is True or is_header or is_member:
-                if role == 'header':
+                if is_header:
                     announce = mygroup.announce
-                    print(mygroup.id)
-                    print(request.user.id)
                     for i, innner_value in enumerate(q_group_member):
                         member_list.append({'number': i+1,
                                             'id': innner_value.member.virtualid,
@@ -308,6 +483,7 @@ class MyGroup(APIView):
                     mydate=date_now, mygroup=mygroup)
                 nextmonth_booking_list = group.group_booking_by_date(
                     mydate=date_nextmonth, mygroup=mygroup)
+                payment_list = group.group_payment(mygroup=mygroup)
 
             d = dict()
             d = {'group_name': mygroup.group_name,
@@ -316,7 +492,8 @@ class MyGroup(APIView):
                  'role': role,
                  'detail': {"announce": announce, "member": member_list,
                             "groupbooking": {"this_month": thismonth_booking_list,
-                                             "next_month": nextmonth_booking_list}}
+                                             "next_month": nextmonth_booking_list},
+                            "payment": payment_list}
                  }
 
             return JsonResponse(d)
@@ -365,18 +542,12 @@ class MyGroup(APIView):
         is_header = group.group_head_per(
             groupid=groupid, memberid=request.user.id)
         if is_header:
-            data = request.data
-            public = data['public']
-            if public is True or public is False:
-                print('pass')
-                print(public)
-                print(mygroup.is_public)
-                mygroup.is_public = public
-                print(mygroup.is_public)
-                mygroup.save()
-                return JsonResponse({'msg': 'ok'}, status=200)
-            else:
-                return JsonResponse({'msg': 'true or false value only'})
+            group_serializer = s.GroupDataSerializer(
+                mygroup, data=request.data)
+            if group_serializer.is_valid():
+                group_serializer.save()
+                return JsonResponse(group_serializer.data)
+            return JsonResponse({'message': 'NOT CHANGE'})
         else:
             return JsonResponse({'msg': 'permission denied'}, status=400)
 

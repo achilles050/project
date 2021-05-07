@@ -27,12 +27,12 @@ SECRET_KEY = '6*23oj2o%)6s650*r)xw$ofe(tqv#!oeyui=c1z$1wf+$)d-1b'
 DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
+APPEND_SLASH = True
 # Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
-    'django.contrib.auth',
+    # 'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'member',
     'booking',
     'django_crontab',
+    'django.contrib.auth',
 ]
 
 CRONJOBS = [
@@ -63,7 +64,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 
     # test
-    # 'func.disable.DisableCSRF',
+    'func.disable.DisableCSRF',
 ]
 
 
@@ -73,7 +74,8 @@ REST_FRAMEWORK = {
         # 'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'func.disable.CsrfExemptSessionAuthentication',
-    ]
+    ],
+    # 'DATETIME_FORMATS': ['iso-8601', '%Y-%m-%dT%H:%M:%S.%f%z']
 }
 
 ROOT_URLCONF = 'bbc.urls'
@@ -107,6 +109,9 @@ DATABASES = {
         'HOST': '',
         'USER': 'root',
         'PASSWORD': '',
+        'OPTIONS': {
+            'sql_mode': 'traditional',
+        },
     }
 }
 
@@ -219,5 +224,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
+DEFAULT_FROM_EMAIL = "no-reply@bookingbadmintoncourt.com"
 EMAIL_HOST_USER = 'bbctesting01'
 EMAIL_HOST_PASSWORD = 'bbc*6263'

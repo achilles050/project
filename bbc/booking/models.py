@@ -29,8 +29,9 @@ class AllCourtInfo(models.Model):
     announce = models.CharField(max_length=1000)  # for annouce information
     ads = models.CharField(max_length=500)  # for promote something
     rules = models.CharField(max_length=1000)  # store rule when go to court
-    # store image qrcode for payment
-    qrcode = models.ImageField(null=True, upload_to='qrcode')
+    # store information for payment
+    bank_acc_id = models.CharField(max_length=15, null=True)
+    bank_acc_name = models.CharField(max_length=50, null=True)
 
 
 class EachCourtInfo(models.Model):
@@ -60,19 +61,19 @@ class Booking(models.Model):
     court = models.ForeignKey(
         EachCourtInfo, on_delete=models.CASCADE, db_constraint=False)  # what court
     booking_datetime = models.DateTimeField()  # datetime booking
-    exp_datetime = models.DateTimeField()  # for pay in this time
+    exp_datetime = models.DateTimeField(null=True)  # for pay in this time
     price_normal = models.DecimalField(
         max_digits=5, decimal_places=2)  # each booking slot
     price_ds = models.DecimalField(
         max_digits=5, decimal_places=2)  # each booking slot
     price_pay = models.DecimalField(
         max_digits=5, decimal_places=2)  # each booking slot
-    # 0 = booking, 1 = confirmed, 2 = canceled, 3 = checkedPayment false(checking not found transaction)
+    # 0 = booking, 1 = success, 2 = checking payment, 3 = refunded, 4 = checkedPayment false(checking not found transaction)
     payment_state = models.IntegerField(default=0)
     timestamp = models.DateTimeField(
         default=timezone.make_aware(datetime.now()))  # time now when booking
     # bookingid for identify your court was booked
-    bookingid = models.CharField(max_length=32)
+    bookingid = models.CharField(max_length=32, unique=True)
     # identify your payment (can repeated)
     paymentid = models.CharField(max_length=32, null=True)
     # use when delete by member or admin but stored
@@ -95,7 +96,7 @@ class Payment(models.Model):
         Group, on_delete=models.CASCADE, null=True, db_constraint=False)
     # change when check success by admin
     is_checked = models.BooleanField(default=False)
-    # changee when checking found transaction if not change state in booking table to 3
+    # changee when checking found transaction if not change state in booking table to 5
     is_founded = models.BooleanField(default=True)
 
 
@@ -104,6 +105,8 @@ class Refund(models.Model):
         db_table = 'bbc_refund'
     payment = models.ForeignKey(
         Payment, on_delete=models.CASCADE, db_constraint=False)
+    member = models.ForeignKey(
+        Member, on_delete=models.CASCADE, null=True, db_constraint=False)
     detail = models.CharField(max_length=20)  # customer bankingid
     timestamp = models.DateTimeField(
         default=timezone.make_aware(datetime.now()))  # for check is in refund time

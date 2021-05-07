@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from datetime import datetime
 from uuid import uuid4
+from django.conf import settings
 
 # Create your models here.
 
@@ -38,6 +39,8 @@ class Member(User):
 
     class Meta:
         db_table = 'bbc_member'
+    user_ptr = models.OneToOneField(auto_created=True, on_delete=models.CASCADE,
+                                    parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL, db_constraint=False)
     tel = models.CharField(max_length=10)
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10)

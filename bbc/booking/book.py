@@ -24,7 +24,7 @@ def check_valid(court, mytime, mydate):  # time in hour unit
         inrange = dt <= timezone.make_aware(
             datetime.now() + info.range_booking)
         valid = not models.Booking.objects.filter(
-            booking_datetime=dt).filter(court_id__court_number=court).filter(exp_datetime__gt=timezone.make_aware(datetime.now())).exists()
+            booking_datetime=dt).filter(court_id__court_number=court).filter(is_deleted=False).exclude(exp_datetime__lt=timezone.make_aware(datetime.now())).exists()
         if info.open_time.hour > info.close_time.hour:
             time_range = list(
                 range(info.close_time.hour, info.open_time.hour))
@@ -63,7 +63,7 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
         inrange_member = not dt <= timezone.make_aware(
             datetime.now() + info.range_booking)
         valid = not models.Booking.objects.filter(
-            booking_datetime=dt).filter(court_id__court_number=court).filter(exp_datetime__gt=timezone.make_aware(datetime.now())).exists()
+            booking_datetime=dt).filter(court_id__court_number=court).filter(is_deleted=False).exclude(exp_datetime__lt=timezone.make_aware(datetime.now())).exists()
 
         if info.open_time.hour > info.close_time.hour:
             time_range = list(
@@ -75,8 +75,8 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
             time_range = l
         else:
             time_range = list(range(info.open_time.hour, info.close_time.hour))
-        # inrange_member = True  # for bypass booking this month or booking out of member's range
-        # past = True # for bypass booking this month
+        inrange_member = True  # for bypass booking this month or booking out of member's range
+        past = True  # for bypass booking this month
         if mytime in time_range and valid and not maintain and past and inrange and inrange_member:
             return True
         else:
@@ -91,7 +91,7 @@ def check_valid_group_history(court, mytime, mydate):
     try:
         dt = timezone.make_aware(datetime.combine(mydate, time(mytime)))
         valid = not models.Booking.objects.filter(booking_datetime=dt).filter(
-            court_id__court_number=court).filter(payment_state=1).exclude(group=None).exists()
+            court_id__court_number=court).filter(payment_state=1).filter(is_deleted=False).exclude(group=None).exists()
         return valid
     except:
         print('Error is : ', e)
@@ -102,7 +102,7 @@ def check_valid_group_history_for_booking(court, mydate, mytime, mygroup):
     try:
         dt = timezone.make_aware(datetime.combine(mydate, time(mytime)))
         valid = models.Booking.objects.filter(booking_datetime=dt).filter(
-            court_id__court_number=court).filter(payment_state=1).filter(group=mygroup).exists()
+            court_id__court_number=court).filter(payment_state=1).filter(group=mygroup).filter(is_deleted=False).exists()
         return valid
     except:
         print('Error is : ', e)
@@ -134,7 +134,7 @@ def test():
         send_mail(
             subject='SubjectTest',  # Subject here
             message='MessageTest',  # Here is the message.
-            from_email='bbctesting01@gmail.com',  # from@example.com
+            from_email='bbctesting02@gmail.com',  # from@example.com
             recipient_list=['thorn3579@gmail.com'],  # to@example.com
             fail_silently=False,
         )

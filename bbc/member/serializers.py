@@ -19,6 +19,14 @@ class CreateGroupMemberSerializer(serializers.ModelSerializer):
         fields = ['virtualid', 'first_name']
 
 
+class GroupDataSerializer(serializers.ModelSerializer):
+    public = serializers.BooleanField(source='is_public')
+
+    class Meta:
+        model = models.Group
+        # fields = ['announce', 'is_public']
+        fields = ['public', ]
+
 # class GroupmemberSerializer(serializers.ModelSerializer):
 #     # group_name = serializers.SlugRelatedField(
 #     #     read_only=True, slug_field='header', allow_null=True)

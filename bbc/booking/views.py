@@ -64,8 +64,8 @@ class CheckPrice(APIView):
 
         for bookingid in all_bookingid:
             now = timezone.make_aware(datetime.now())
-            q_bookingid = models.Booking.objects.filter(
-                exp_datetime__gt=now).filter(bookingid=bookingid).filter(payment_state=0).exists()
+            q_bookingid = models.Booking.objects.filter(bookingid=bookingid).filter(payment_state=0).filter(is_deleted=False).exclude(
+                exp_datetime__lt=now).exists()
 
             if q_bookingid:
                 q_booking = models.Booking.objects.get(bookingid=bookingid)
@@ -310,7 +310,7 @@ class GroupBooking(APIView):
 
                 history_groupbooking = models.Booking.objects.filter(group=q_group).filter(
                     booking_datetime__gte=dt0).filter(booking_datetime__lte=dt23).filter(
-                    payment_state=1)
+                    payment_state=1).filter(is_deleted=False)
 
                 history_groupbooking = sorted(history_groupbooking, key=lambda x: (
                     x.booking_datetime.date(), x.court.court_number, x.booking_datetime.time()))
@@ -539,35 +539,40 @@ class Payment(APIView):
     def get(self, request):
         if request.user.id is None:
             return JsonResponse({'msg': 'Pls login'}, status=404)
-
+        data = dict()
         action = request.GET.get('q', None)
         if action == 'group':
             is_headergroupmember = mem_models.GroupMember.objects.filter(
                 role='h').filter(member_id=request.user.id).exists()
 
             if is_headergroupmember:
-                q_headergroupmember = mem_models.GroupMember.objects.get(
+                headergroupmember_q = mem_models.GroupMember.objects.get(
                     role='h', member_id=request.user.id)
-                q_group = mem_models.Group.objects.get(
-                    id=q_headergroupmember.group_id)
-                q_payment = models.Payment.objects.filter(group=q_group)
+                group_q = mem_models.Group.objects.get(
+                    id=headergroupmember_q.group_id)
+                payment_q = models.Payment.objects.filter(group=group_q)
+                data['group'] = group_q.group_name
             else:
                 return JsonResponse({'msg': 'You re not header'}, status=400)
 
         else:
-            q_mem = mem_models.Member.objects.get(id=request.user.id)
-            q_payment = models.Payment.objects.filter(
-                member=q_mem).filter(group=None)
-        s_payment = serializers.PaymentSerializer(q_payment, many=True)
-        d_payment = dict({'data': s_payment.data})
-        return JsonResponse(d_payment)
+            mem_q = mem_models.Member.objects.get(id=request.user.id)
+            payment_q = models.Payment.objects.filter(
+                member=mem_q).filter(group=None).filter(is_founded=True)
+        payment_s = serializers.PaymentSerializer(payment_q, many=True)
+        payment_list = list(payment_s.data)
+        for i in range(len(payment_list)):
+            payment_list[i]['number'] = i+1
+        data['data'] = payment_list
+        return JsonResponse(data)
 
     def post(self, request):
         all_bookingid = request.data['bookingid']
+        if len(all_bookingid) == 0:
+            return JsonResponse({'msg': 'Try Again not have any bookingid'})
         is_groupbooking = request.data['group']
         booking_obj_list = []
         pay = 0
-        print(is_groupbooking)
         if is_groupbooking:
             if request.user.id is None:
                 return JsonResponse({'msg': 'Pls login'})
@@ -591,8 +596,8 @@ class Payment(APIView):
             q_group = None
         for bookingid in all_bookingid:
             now = timezone.make_aware(datetime.now())
-            q_bookingid = models.Booking.objects.filter(
-                exp_datetime__gt=now).filter(bookingid=bookingid).filter(payment_state=0).exists()
+            q_bookingid = models.Booking.objects.filter(bookingid=bookingid).filter(payment_state=0).exclude(
+                exp_datetime__lt=now).exists()
 
             if q_bookingid:
                 q_booking = models.Booking.objects.get(bookingid=bookingid)
@@ -611,19 +616,147 @@ class Payment(APIView):
             for value in booking_obj_list:
                 value.payment_state = 1
                 value.paymentid = payment_obj.paymentid
-                value.exp_datetime = value.booking_datetime + \
-                    timedelta(hours=1)
+                value.exp_datetime = None
                 value.save()
             return JsonResponse({'message': 'confirm success'})
         else:
             return JsonResponse({'message': 'confirm unsuccess'}, status=400)
 
 
-class HistoryPayment(APIView):
+class Rufunding(APIView):
     def get(self, request):
-        q = models.Payment.objects.all()
-        print(q)
-        s = serializers.PaymentSerializer(q, many=True)
-        print('pass')
-        d = dict({'data': s.data})
-        return JsonResponse(d)
+        pass
+
+
+class History(APIView):
+    def get(self, request):
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+        dt_now = timezone.make_aware(datetime.now())
+        refund_dur = q_allcourtinfo.refund_duration
+        refund_datetime = dt_now+refund_dur
+        booking_q = models.Booking.objects.filter(
+            member_id=request.user.id).filter(group=None).exclude(exp_datetime__lt=dt_now).filter(is_deleted=False)
+        booking_q = sorted(booking_q, key=lambda x: (
+            x.booking_datetime.date(), x.court.court_number, x.booking_datetime.time()))
+        booking_s = serializers.HistorySerializer(booking_q, many=True)
+        booking_list = list(booking_s.data)
+
+        for i in range(len(booking_list)):
+            booking_list[i]['number'] = i+1
+            if booking_q[i].payment_state == 0:
+                booking_list[i]['state'] = 'booking'
+                booking_list[i]['timeout'] = booking_q[i].exp_datetime
+                booking_list[i]['action'] = ['pay', 'cancel']
+            elif booking_q[i].payment_state == 1:
+                booking_list[i]['state'] = 'success'
+                if booking_q[i].booking_datetime > refund_datetime:
+                    booking_list[i]['timeout'] = booking_q[i].booking_datetime - refund_dur
+                    booking_list[i]['action'] = ['refund']
+                else:
+                    booking_list[i]['timeout'] = None
+                    booking_list[i]['action'] = None
+            elif booking_q[i].payment_state == 2:
+                booking_list[i]['state'] = 'checking_payment'
+                booking_list[i]['timeout'] = None
+                booking_list[i]['action'] = None
+            elif booking_q[i].payment_state == 3:
+                booking_list[i]['state'] = 'refunded'
+                booking_list[i]['timeout'] = None
+                booking_list[i]['action'] = None
+            elif booking_q[i].payment_state == 4:
+                booking_list[i]['state'] = 'checking_payment_false'
+                booking_list[i]['timeout'] = None
+                booking_list[i]['action'] = None
+        return JsonResponse({'data': booking_list})
+
+
+class BookingToPaymentAndCancel(APIView):
+    def get(self, request):
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        dt_now = timezone.make_aware(datetime.now())
+        booking_q = models.Booking.objects.filter(
+            member_id=request.user.id).filter(group=None).filter(payment_state=0).exclude(exp_datetime__lt=dt_now).filter(is_deleted=False)
+        booking_q = sorted(booking_q, key=lambda x: (
+            x.booking_datetime.date(), x.court.court_number, x.booking_datetime.time()))
+        booking_s = serializers.HistorySerializer(booking_q, many=True)
+        booking_list = list(booking_s.data)
+        for i in range(len(booking_list)):
+            booking_list[i]['number'] = i+1
+            booking_list[i]['timeout'] = booking_q[i].exp_datetime
+
+        return JsonResponse({'data': booking_list})
+
+    def post(self, request):
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        data = request.data
+        action = data['action']
+        if action == 'pay':
+            request.data['group'] = False
+            return Payment().post(request)
+        elif action == 'cancel':
+            all_bookingid = data['bookingid']
+            for bookingid in all_bookingid:
+                try:
+                    obj = models.Booking.objects.get(member_id=request.user.id, group=None,
+                                                     bookingid=bookingid, payment_state=0, is_deleted=False)
+                except Exception as e:
+                    print(e)
+                    return JsonResponse({'msg': f'bookingid {bookingid} not found'})
+                obj.exp_datetime = None
+                obj.is_deleted = True
+                obj.save()
+            return JsonResponse({'msg': 'Cancel successful'})
+
+
+class SuccessToRefunding(APIView):
+    def get(self, request):
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+        dt_now = timezone.make_aware(datetime.now())
+        refund_dur = q_allcourtinfo.refund_duration
+        refund_datetime = dt_now+refund_dur
+        booking_q = models.Booking.objects.filter(
+            member_id=request.user.id).filter(group=None).filter(payment_state=1).filter(booking_datetime__gt=refund_datetime)
+        booking_q = sorted(booking_q, key=lambda x: (
+            x.booking_datetime.date(), x.court.court_number, x.booking_datetime.time()))
+        booking_s = serializers.HistorySerializer(booking_q, many=True)
+        booking_list = list(booking_s.data)
+        for i in range(len(booking_list)):
+            booking_list[i]['number'] = i+1
+            booking_list[i]['timeout'] = refund_datetime
+
+        return JsonResponse({'data': booking_list})
+
+    def post(self, request):
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        data = request.data
+        action = data['action']
+        refund_list = data['bookingid']
+
+
+# class HistoryPaymentGroup(APIView):
+#     def get(self, request):
+#         if request.user.id is None:
+#             return JsonResponse({'msg': 'Pls login'})
+#         member = mem_models.Member.objects.get(id=request.user.id)
+#         q = models.Payment.objects.all()
+#         q = models.Payment.objects.filter(group_id=1)
+#         s = serializers.PaymentSerializer(q, many=True)
+#         d = dict({'data': s.data})
+#         return JsonResponse(d)
+
+
+# class PaymentHistory(APIView):
+#     def get(self, request):
+#         if request.user.id is None:
+#             return JsonResponse({'msg': 'Pls login'})
+#         payment_q = models.Payment.objects.filter(
+#             member_id=request.user.id).filter(group=None)
+#         payment_s = serializers.PaymentSerializer(payment_q, many=True)
+#         return JsonResponse({'data': payment_s.data})

@@ -39,14 +39,27 @@ def group_booking_by_date(mydate, mygroup):
     group_booking = sorted(group_booking, key=lambda x: (
         x.booking_datetime.date(), x.court.court_number, x.booking_datetime.time()))
 
-    for value in group_booking:
+    for index, value in enumerate(group_booking):
         booked_dt = value.booking_datetime
         booked_hour = int(booked_dt.strftime('%H'))
         booked_t = str('%02d:00' % booked_hour+'-' +
                        '%02d:00' % (booked_hour+1))
         calendar.weekday(
             booked_dt.year, booked_dt.month, booked_dt.day)
-        group_booking_list.append({'weekday': booked_dt.strftime('%A'),
+        group_booking_list.append({'number': index+1,
+                                   'weekday': booked_dt.strftime('%A'),
                                    'court': value.court.court_number,
                                    'time': booked_t})
     return group_booking_list
+
+
+def group_payment(mygroup):
+    payment_list = list()
+    payment = booking_models.Payment.objects.filter(
+        group=mygroup).filter(is_founded=True)
+    for index, value in enumerate(payment):
+        payment_list.append({'number': index+1,
+                             'date': value.timestamp,
+                             'price': value.pay,
+                             'paymentid': value.paymentid})
+    return payment_list

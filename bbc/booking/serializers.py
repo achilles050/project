@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from . import models
+from datetime import datetime as dt
 
 
 # class StatusSerializer(serializers.ModelSerializer):
@@ -29,8 +30,24 @@ class EachCourtInfo2Serializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
+    number = serializers.IntegerField(allow_null=True)
 
     class Meta:
         model = models.Payment
         # fields = ('__all__')
         exclude = ('id', 'member', 'group')
+
+
+class HistorySerializer(serializers.ModelSerializer):
+
+    number = serializers.IntegerField(allow_null=True)
+    court = serializers.IntegerField(source='court.court_number')
+    date = serializers.DateTimeField(
+        source='booking_datetime', format="%Y-%m-%d")
+    time = serializers.DateTimeField(
+        source='booking_datetime', format="%H:%M:%S")
+
+    class Meta:
+        model = models.Booking
+        fields = ('number', 'date', 'court', 'time', 'bookingid')
+        # fields = ('court__court_number',)
