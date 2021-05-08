@@ -50,97 +50,36 @@
 # else:
 #     continue
 
-
-data = {
-    "arr": [
-        ["Monday", {"time": "14:00-15:00", "column": "Court1"},
-            {"time": "15:00-16:00", "column": "Court1"}],
-        ["Tuesday"],
-        ["Wednesday"],
-        ["Thursday", {"time": "16:00-17:00", "column": "Court1"},
-            {"time": "17:00-18:00", "column": "Court1"}],
-        ["Friday"],
-        ["Saturday"],
-        ["Sunday", {"time": "18:00-19:00", "column": "Court1"},
-            {"time": "19:00-20:00", "column": "Court1"}]
-    ]
-}
-
-booking = data['arr']
-for value in booking:
-    print(value[0])
-    for i in range(len(value)-1):
-        test = value[i+1]['time']
-        print(test)
+# request.GET.__init__(mutable=True)
+# request.GET.appendlist('q', 0)
+# print(request.GET)
+# # request.GET.__init__(mutable=False)
+# request.GET.__setitem__('test3', 0)
+# print(request.GET)
 
 
+# data = {
+#     "arr": [
+#         ["Monday", {"time": "14:00-15:00", "column": "Court1"},
+#             {"time": "15:00-16:00", "column": "Court1"}],
+#         ["Tuesday"],
+#         ["Wednesday"],
+#         ["Thursday", {"time": "16:00-17:00", "column": "Court1"},
+#             {"time": "17:00-18:00", "column": "Court1"}],
+#         ["Friday"],
+#         ["Saturday"],
+#         ["Sunday", {"time": "18:00-19:00", "column": "Court1"},
+#             {"time": "19:00-20:00", "column": "Court1"}]
+#     ]
+# }
+
+# booking = data['arr']
+
+# mybooking = list()
 # for value in booking:
-#     court = int(value['column'][5:])
-#     mytime = int(value['time'][:2])
-
-#     strday = value['weekday']
-#     mydate = datetime.strptime(year_month, '%Y-%m').date()
-#     day_of_week = list(calendar.day_name).index(strday)
-
-#     thismonth_day = calendar.monthcalendar(
-#         dt_now.year, dt_now.month)[1][day_of_week]
-#     thismonth_date = datetime(
-#         dt_now.year, dt_now.month, thismonth_day)
-#     thismonth_date = timezone.make_aware(thismonth_date)
-
-#     valid_history = book.check_valid_group_history(
-#         court=court, mydate=thismonth_date, mytime=mytime)
-#     valid_yourhsitory = book.check_valid_group_history_for_booking(
-#         court=court, mydate=thismonth_date, mytime=mytime, mygroup=q_group)
-#     valid_thismonth = valid_history or valid_yourhsitory
-
-#     for day in calendar.monthcalendar(mydate.year, mydate.month):
-#         if day[day_of_week] != 0:
-#             booking_date = date(
-#                 mydate.year, mydate.month, day[day_of_week])
-#             booking_date_list.append(booking_date)
-#             book.check_valid_group(
-#                 court=court, mytime=mytime, mydate=booking_date)
-#             if book.check_valid_group(court=court, mytime=mytime, mydate=booking_date) and valid_thismonth:
-#                 booking_datetime = timezone.make_aware(
-#                     datetime.combine(booking_date, time(mytime)))
-#                 bookingid = uuid4().hex
-#                 q_court = models.EachCourtInfo.objects.get(
-#                     court_number=court)
-#                 price_normal = q_court.price_normal
-#                 ds_group = q_court.price_ds_group
-#                 ds_time = q_court.price_ds_time
-#                 ds_time_start = q_court.time_ds_start.hour
-#                 ds_time_end = q_court.time_ds_end.hour
-
-#                 if not mytime in range(int(ds_time_start), int(ds_time_end)):
-#                     ds_time = 0
-
-#                 booking_obj, booking_created = models.Booking.objects.get_or_create(
-#                     name=name,
-#                     email=email,
-#                     tel=tel,
-#                     member=member,
-#                     group=q_group,
-#                     court=q_court,
-#                     booking_datetime=booking_datetime,
-#                     exp_datetime=dt_exp,
-#                     price_normal=price_normal,
-#                     price_ds=ds_group+ds_time,
-#                     price_pay=price_normal-ds_group-ds_time,
-#                     bookingid=bookingid)
-
-#                 if booking_created:
-#                     booking_obj_list.append(booking_obj)
-#                     all_price_normal += price_normal
-#                     all_ds_group += ds_group
-#                     all_ds_time += ds_time
-#                 else:
-#                     booking_obj.delete()
-#                     break
-#             else:
-#                 break
-#     else:
+#     if len(value) == 1:
 #         continue
-#     break
-# else:
+#     print(value[0])
+#     for i in range(len(value)-1):
+#         mybooking.append(
+#             {'weekday': value[0], 'column': value[i+1]['column'], 'time': value[i+1]['time']})

@@ -76,6 +76,8 @@ class Booking(models.Model):
     bookingid = models.CharField(max_length=32, unique=True)
     # identify your payment (can repeated)
     paymentid = models.CharField(max_length=32, null=True)
+    # identify your refund (can repeated)
+    refundid = models.CharField(max_length=32, null=True)
     # use when delete by member or admin but stored
     is_deleted = models.BooleanField(default=False)
 
@@ -103,11 +105,13 @@ class Payment(models.Model):
 class Refund(models.Model):
     class Meta:
         db_table = 'bbc_refund'
-    payment = models.ForeignKey(
-        Payment, on_delete=models.CASCADE, db_constraint=False)
+    refundid = models.CharField(max_length=32, unique=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, null=True, db_constraint=False)
-    detail = models.CharField(max_length=20)  # customer bankingid
+    bank_acc_id = models.CharField(max_length=20)  # customer bankingid
+    bank_acc_name = models.CharField(
+        max_length=20, null=True)  # customer banking name
     timestamp = models.DateTimeField(
         default=timezone.make_aware(datetime.now()))  # for check is in refund time
     is_refunded = models.BooleanField(

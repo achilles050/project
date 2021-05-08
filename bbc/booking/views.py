@@ -61,21 +61,24 @@ class CheckPrice(APIView):
         all_bookingid = request.data['bookingid']
         booking_obj_list = []
         pay = 0
+        discount = 0
 
         for bookingid in all_bookingid:
             now = timezone.make_aware(datetime.now())
-            q_bookingid = models.Booking.objects.filter(bookingid=bookingid).filter(payment_state=0).filter(is_deleted=False).exclude(
+            q_bookingid = models.Booking.objects.filter(bookingid=bookingid).filter(payment_state=1).filter(is_deleted=False).exclude(
                 exp_datetime__lt=now).exists()
 
             if q_bookingid:
                 q_booking = models.Booking.objects.get(bookingid=bookingid)
                 pay += q_booking.price_pay
+                discount += q_booking.price_ds
                 booking_obj_list.append(q_booking)
             else:
                 return JsonResponse({'message': 'error bookingid not available'}, status=404)
         d = dict()
         d['Bookingid'] = all_bookingid
         d['price'] = pay
+        d['discount'] = discount
         return JsonResponse(d)
 
 
@@ -359,11 +362,20 @@ class GroupBooking(APIView):
             return JsonResponse({'msg': 'You re not header'}, status=400)
 
         year_month = request.data['year_month']
-        booking = request.data['arr']
+        raw_booking = request.data['arr']
         dt_now = timezone.make_aware(datetime.now())
 
-        # if book.AddMonths(dt_now.date(), 1) != datetime.strptime(year_month, '%Y-%m').date():
-        #     return JsonResponse({'msg': 'try again (year_month not correct)'})
+        if book.AddMonths(dt_now.date(), 1) != datetime.strptime(year_month, '%Y-%m').date():
+            return JsonResponse({'msg': 'try again (year_month not correct)'})
+
+        booking = list()
+        for value in raw_booking:
+            if len(value) == 1:
+                continue
+            print(value[0])
+            for i in range(len(value)-1):
+                booking.append(
+                    {'weekday': value[0], 'column': value[i+1]['column'], 'time': value[i+1]['time']})
 
         booking_obj_list = list()
         booking_date_list = list()
@@ -516,7 +528,6 @@ class GroupBooking(APIView):
 
         if len(booking_date_list) != len(booking_obj_list):
             if len(booking_obj_list) != 0:
-                myi = 1
                 for value in booking_obj_list:
                     value.delete()
             return JsonResponse({'success': False})
@@ -532,7 +543,6 @@ class GroupBooking(APIView):
             response_dict['price']['pay'] = all_price_normal - \
                 all_ds_time-all_ds_group
             return JsonResponse(response_dict)
-        return HttpResponse('??????')
 
 
 class Payment(APIView):
@@ -605,12 +615,14 @@ class Payment(APIView):
                 booking_obj_list.append(q_booking)
             else:
                 return JsonResponse({'message': f'error bookingid {bookingid} not available'}, status=404)
-
-        payment_obj, payment_created = models.Payment.objects.get_or_create(
-            paymentid=uuid4().hex,
-            pay=pay,
-            member=member,
-            group=q_group)
+        while True:
+            payment_obj, payment_created = models.Payment.objects.get_or_create(
+                paymentid=uuid4().hex,
+                pay=pay,
+                member=member,
+                group=q_group)
+            if payment_created:
+                break
 
         if payment_created:
             for value in booking_obj_list:
@@ -623,9 +635,47 @@ class Payment(APIView):
             return JsonResponse({'message': 'confirm unsuccess'}, status=400)
 
 
-class Rufunding(APIView):
-    def get(self, request):
-        pass
+class Refunding(APIView):
+    def post(self, request):
+        if request.user.id is None:
+            return JsonResponse({'msg': 'Pls login'})
+        data = request.data
+        action = data['action']
+        all_bookingid = data['bookingid']
+        banking_id = data['banking_id']
+        banking_name = data['banking_name']
+        # banking_id = 1234567890
+        # banking_name = 'test'
+        refund_obj_list = list()
+        price = 0
+        for bookingid in all_bookingid:
+            try:
+                obj = models.Booking.objects.get(member_id=request.user.id, group=None,
+                                                 bookingid=bookingid, payment_state=1, is_deleted=False)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'msg': f'bookingid {bookingid} not found'})
+            price += obj.price_pay
+            refund_obj_list.append(obj)
+        while True:
+            refundid = uuid4().hex
+            refund_obj, refund_created = models.Refund.objects.get_or_create(
+                refundid=refundid,
+                price=price,
+                member_id=request.user.id,
+                bank_acc_id=banking_id,
+                bank_acc_name=banking_name
+            )
+
+            if refund_created:
+                break
+
+        for value in refund_obj_list:
+            value.payment_state = 3
+            value.refundid = refund_obj.refundid
+            value.save()
+
+        return JsonResponse({'msg': 'Refund successful'})
 
 
 class History(APIView):
@@ -672,6 +722,11 @@ class History(APIView):
         return JsonResponse({'data': booking_list})
 
 
+class HistoryPaymentPersonal(APIView):
+    def get(self, request):
+        return Payment().get(request)
+
+
 class BookingToPaymentAndCancel(APIView):
     def get(self, request):
         if request.user.id is None:
@@ -694,6 +749,7 @@ class BookingToPaymentAndCancel(APIView):
             return JsonResponse({'msg': 'Pls login'})
         data = request.data
         action = data['action']
+        booking_obj_list = list()
         if action == 'pay':
             request.data['group'] = False
             return Payment().post(request)
@@ -706,9 +762,12 @@ class BookingToPaymentAndCancel(APIView):
                 except Exception as e:
                     print(e)
                     return JsonResponse({'msg': f'bookingid {bookingid} not found'})
-                obj.exp_datetime = None
-                obj.is_deleted = True
-                obj.save()
+                booking_obj_list.append(obj)
+            for value in booking_obj_list:
+                value.exp_datetime = None
+                value.is_deleted = True
+                value.save()
+
             return JsonResponse({'msg': 'Cancel successful'})
 
 
@@ -728,35 +787,9 @@ class SuccessToRefunding(APIView):
         booking_list = list(booking_s.data)
         for i in range(len(booking_list)):
             booking_list[i]['number'] = i+1
-            booking_list[i]['timeout'] = refund_datetime
+            booking_list[i]['timeout'] = booking_q[i].booking_datetime - refund_dur
 
         return JsonResponse({'data': booking_list})
 
     def post(self, request):
-        if request.user.id is None:
-            return JsonResponse({'msg': 'Pls login'})
-        data = request.data
-        action = data['action']
-        refund_list = data['bookingid']
-
-
-# class HistoryPaymentGroup(APIView):
-#     def get(self, request):
-#         if request.user.id is None:
-#             return JsonResponse({'msg': 'Pls login'})
-#         member = mem_models.Member.objects.get(id=request.user.id)
-#         q = models.Payment.objects.all()
-#         q = models.Payment.objects.filter(group_id=1)
-#         s = serializers.PaymentSerializer(q, many=True)
-#         d = dict({'data': s.data})
-#         return JsonResponse(d)
-
-
-# class PaymentHistory(APIView):
-#     def get(self, request):
-#         if request.user.id is None:
-#             return JsonResponse({'msg': 'Pls login'})
-#         payment_q = models.Payment.objects.filter(
-#             member_id=request.user.id).filter(group=None)
-#         payment_s = serializers.PaymentSerializer(payment_q, many=True)
-#         return JsonResponse({'data': payment_s.data})
+        return Refunding().post(request)

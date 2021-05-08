@@ -75,8 +75,8 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
             time_range = l
         else:
             time_range = list(range(info.open_time.hour, info.close_time.hour))
-        inrange_member = True  # for bypass booking this month or booking out of member's range
-        past = True  # for bypass booking this month
+        # inrange_member = True  # for bypass booking this month or booking out of member's range
+        # past = True  # for bypass booking this month
         if mytime in time_range and valid and not maintain and past and inrange and inrange_member:
             return True
         else:
