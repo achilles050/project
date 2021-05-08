@@ -585,7 +585,7 @@ class Payment(APIView):
         pay = 0
         if is_groupbooking:
             if request.user.id is None:
-                return JsonResponse({'msg': 'Pls login'})
+                return JsonResponse({'msg': 'Pls login', 'success': False})
             is_headergroupmember = mem_models.GroupMember.objects.filter(
                 role='h').filter(member_id=request.user.id).exists()
 
@@ -596,7 +596,7 @@ class Payment(APIView):
                     id=q_headergroupmember.group_id)
                 member = q_headergroupmember.member
             else:
-                return JsonResponse({'msg': 'You re not header'}, status=400)
+                return JsonResponse({'msg': 'You re not header', 'success': False}, status=400)
 
         else:
             if request.user.id is not None:
@@ -614,7 +614,7 @@ class Payment(APIView):
                 pay += q_booking.price_pay
                 booking_obj_list.append(q_booking)
             else:
-                return JsonResponse({'message': f'error bookingid {bookingid} not available'}, status=404)
+                return JsonResponse({'message': f'error bookingid {bookingid} not available', 'success': False}, status=404)
         while True:
             payment_obj, payment_created = models.Payment.objects.get_or_create(
                 paymentid=uuid4().hex,
@@ -630,15 +630,15 @@ class Payment(APIView):
                 value.paymentid = payment_obj.paymentid
                 value.exp_datetime = None
                 value.save()
-            return JsonResponse({'message': 'confirm success'})
+            return JsonResponse({'message': 'confirm success', 'success': True})
         else:
-            return JsonResponse({'message': 'confirm unsuccess'}, status=400)
+            return JsonResponse({'message': 'confirm unsuccess', 'success': False}, status=400)
 
 
 class Refunding(APIView):
     def post(self, request):
         if request.user.id is None:
-            return JsonResponse({'msg': 'Pls login'})
+            return JsonResponse({'msg': 'Pls login', 'success': False})
         data = request.data
         action = data['action']
         all_bookingid = data['bookingid']
@@ -654,7 +654,8 @@ class Refunding(APIView):
                                                  bookingid=bookingid, payment_state=1, is_deleted=False)
             except Exception as e:
                 print(e)
-                return JsonResponse({'msg': f'bookingid {bookingid} not found'})
+                return JsonResponse({'msg': f'bookingid {bookingid} not found',
+                                     'success': False})
             price += obj.price_pay
             refund_obj_list.append(obj)
         while True:
@@ -675,13 +676,13 @@ class Refunding(APIView):
             value.refundid = refund_obj.refundid
             value.save()
 
-        return JsonResponse({'msg': 'Refund successful'})
+        return JsonResponse({'msg': 'Refund successful', 'success': True})
 
 
 class History(APIView):
     def get(self, request):
         if request.user.id is None:
-            return JsonResponse({'msg': 'Pls login'})
+            return JsonResponse({'msg': 'Pls login', 'success': False})
         q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
         dt_now = timezone.make_aware(datetime.now())
         refund_dur = q_allcourtinfo.refund_duration
@@ -719,7 +720,7 @@ class History(APIView):
                 booking_list[i]['state'] = 'checking_payment_false'
                 booking_list[i]['timeout'] = None
                 booking_list[i]['action'] = None
-        return JsonResponse({'data': booking_list})
+        return JsonResponse({'data': booking_list, 'success': True})
 
 
 class HistoryPaymentPersonal(APIView):
@@ -730,7 +731,7 @@ class HistoryPaymentPersonal(APIView):
 class BookingToPaymentAndCancel(APIView):
     def get(self, request):
         if request.user.id is None:
-            return JsonResponse({'msg': 'Pls login'})
+            return JsonResponse({'msg': 'Pls login', 'success': False})
         dt_now = timezone.make_aware(datetime.now())
         booking_q = models.Booking.objects.filter(
             member_id=request.user.id).filter(group=None).filter(payment_state=0).exclude(exp_datetime__lt=dt_now).filter(is_deleted=False)
@@ -742,11 +743,11 @@ class BookingToPaymentAndCancel(APIView):
             booking_list[i]['number'] = i+1
             booking_list[i]['timeout'] = booking_q[i].exp_datetime
 
-        return JsonResponse({'data': booking_list})
+        return JsonResponse({'data': booking_list, 'success': True})
 
     def post(self, request):
         if request.user.id is None:
-            return JsonResponse({'msg': 'Pls login'})
+            return JsonResponse({'msg': 'Pls login', 'success': False})
         data = request.data
         action = data['action']
         booking_obj_list = list()
@@ -761,20 +762,20 @@ class BookingToPaymentAndCancel(APIView):
                                                      bookingid=bookingid, payment_state=0, is_deleted=False)
                 except Exception as e:
                     print(e)
-                    return JsonResponse({'msg': f'bookingid {bookingid} not found'})
+                    return JsonResponse({'msg': f'bookingid {bookingid} not found', 'success': False})
                 booking_obj_list.append(obj)
             for value in booking_obj_list:
                 value.exp_datetime = None
                 value.is_deleted = True
                 value.save()
 
-            return JsonResponse({'msg': 'Cancel successful'})
+            return JsonResponse({'msg': 'Cancel successful', 'success': False})
 
 
 class SuccessToRefunding(APIView):
     def get(self, request):
         if request.user.id is None:
-            return JsonResponse({'msg': 'Pls login'})
+            return JsonResponse({'msg': 'Pls login', 'success': False})
         q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
         dt_now = timezone.make_aware(datetime.now())
         refund_dur = q_allcourtinfo.refund_duration
@@ -789,7 +790,7 @@ class SuccessToRefunding(APIView):
             booking_list[i]['number'] = i+1
             booking_list[i]['timeout'] = booking_q[i].booking_datetime - refund_dur
 
-        return JsonResponse({'data': booking_list})
+        return JsonResponse({'data': booking_list, 'success': True})
 
     def post(self, request):
         return Refunding().post(request)

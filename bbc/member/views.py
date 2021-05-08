@@ -162,7 +162,7 @@ class ResetPassword(APIView):
             'protocol': 'https' if request.is_secure() else "http",
             'domain': request.get_host(),
             'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-            'token': account_activation_token.make_token(user)
+            'token': default_token_generator.make_token(user)
         }
 
         print(settings.DEFAULT_FROM_EMAIL)
@@ -177,6 +177,15 @@ class ResetPassword(APIView):
             fail_silently=False,
         )
         return JsonResponse({'msg': 'Pls check your email to do next step'})
+
+
+class T(APIView, PasswordResetView):
+
+    def get_form(self):
+        pass
+
+    def get(self, request):
+        return JsonResponse({'msg': 'hi'})
 
 
 class Login(APIView):
@@ -246,66 +255,6 @@ def Test(request):
 
 def password_reset_done(request):
     return JsonResponse({'msg': 'ok'}, status=200)
-
-
-class ProcessFormView(APIView, View):
-    """Render a form on GET and processes it on POST."""
-
-    def get(self, request, *args, **kwargs):
-        """Handle GET requests: instantiate a blank version of the form."""
-        return self.render_to_response(self.get_context_data())
-
-    def post(self, request, *args, **kwargs):
-        """
-        Handle POST requests: instantiate a form instance with the passed
-        POST variables and then check if it's valid.
-        """
-        # form = request, data['email']
-        form = self.get_form()
-        print(form)
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-
-    # PUT is a valid HTTP verb for creating (with a known URL) or editing an
-    # object, note that browsers only support POST for now.
-    def put(self, *args, **kwargs):
-        return self.post(*args, **kwargs)
-
-
-class TestClass(PasswordResetView):
-    # email_template_name = None  # 'registration/password_reset_email.html'
-    # extra_email_context = None
-    # form_class = None  # PasswordResetForm
-    # from_email = None
-    # html_email_template_name = None
-    # subject_template_name = 'registration/password_reset_subject.txt'
-    # success_url = reverse_lazy('password_reset_done')
-    # template_name = 'registration/password_reset_form.html'
-    # title = _('Password reset')
-    token_generator = default_token_generator
-
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
-    # @method_decorator(csrf_exempt)
-    def form_valid(self, form):
-        opts = {
-            'use_https': self.request.is_secure(),
-            'token_generator': self.token_generator,
-            'from_email': self.from_email,
-            'email_template_name': self.email_template_name,
-            'subject_template_name': self.subject_template_name,
-            'request': self.request,
-            'html_email_template_name': self.html_email_template_name,
-            'extra_email_context': self.extra_email_context,
-        }
-        form.save(**opts)
-        return super().form_valid(form)
-
-
-INTERNAL_RESET_SESSION_TOKEN = '_password_reset_token'
 
 
 class Profile(APIView):
