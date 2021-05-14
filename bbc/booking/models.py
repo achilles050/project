@@ -22,6 +22,12 @@ class AllCourtInfo(models.Model):
     refund_duration = models.DurationField()  # refund duration only
     refund_percent = models.DecimalField(
         max_digits=5, decimal_places=2)  # percent can refund in time
+
+    refund_group_day = models.PositiveIntegerField(
+        null=True)  # refund day only
+    refund_group_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True)  # percent can refund in time
+
     open_time = models.TimeField()
     close_time = models.TimeField()
     # use when member create group(not include header)
@@ -107,6 +113,8 @@ class Refund(models.Model):
         db_table = 'bbc_refund'
     refundid = models.CharField(max_length=32, unique=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, null=True, db_constraint=False)
     member = models.ForeignKey(
         Member, on_delete=models.CASCADE, null=True, db_constraint=False)
     bank_acc_id = models.CharField(max_length=20)  # customer bankingid

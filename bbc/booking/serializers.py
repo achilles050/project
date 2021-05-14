@@ -31,11 +31,12 @@ class EachCourtInfo2Serializer(serializers.ModelSerializer):
 
 class PaymentSerializer(serializers.ModelSerializer):
     number = serializers.IntegerField(allow_null=True)
+    timestamp = serializers.DateTimeField(format='%d-%m-%Y %H:%M:%S')
 
     class Meta:
         model = models.Payment
         # fields = ('__all__')
-        exclude = ('id', 'member', 'group')
+        exclude = ('id', 'member', 'group', 'is_checked', 'is_founded')
 
 
 class HistorySerializer(serializers.ModelSerializer):
@@ -43,9 +44,9 @@ class HistorySerializer(serializers.ModelSerializer):
     number = serializers.IntegerField(allow_null=True)
     court = serializers.IntegerField(source='court.court_number')
     date = serializers.DateTimeField(
-        source='booking_datetime', format="%Y-%m-%d")
+        source='booking_datetime', format="%d-%m-%Y")
     time = serializers.DateTimeField(
-        source='booking_datetime', format="%H:%M:%S")
+        source='booking_datetime', format="%H:%M")
 
     class Meta:
         model = models.Booking

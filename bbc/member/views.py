@@ -156,6 +156,8 @@ class ResetPassword(APIView):
         except:
             return JsonResponse({'msg': 'Try again!!!'})
 
+        username = user.user
+
         context = {
             'user': username+settings.DEFAULT_FROM_EMAIL,
             'email': email,
@@ -227,19 +229,19 @@ def Test(request):
         # print(token.account_activation_token.check_token(user, mytoken1))
 
         user = get_object_or_404(models.Member, username='thorn')
-        mytoken1 = token.account_activation_token.make_token(user)
+        mytoken1 = account_activation_token.make_token(user)
         print(user.first_name)
         print(mytoken1)
         print(type(mytoken1))
-        print(token.default_token_generator.check_token(user, mytoken1))
+        print(default_token_generator.check_token(user, mytoken1))
 
-        mytoken2 = token.default_token_generator.make_token(user)
+        mytoken2 = default_token_generator.make_token(user)
         print(user)
         print(mytoken2)
         print(type(mytoken2))
         print(default_token_generator.check_token(user, mytoken2))
 
-        print(token.default_token_generator.make_token(user))
+        print(default_token_generator.make_token(user))
 
         # mytoken2 = token.default_token_generator.make_token(user)
         # print(user)
@@ -311,7 +313,7 @@ class Creategroup(APIView):
         if group_name == '':
             return JsonResponse({'msg': f'pls fill your group name!!!'}, status=400)
 
-        if models.GroupMember.objects.filter(role='h').exists():
+        if models.GroupMember.objects.filter(role='h').filter(member_id=request.user.id).exists():
             return JsonResponse({'msg': f'Can not create group because you are header in another group'}, status=400)
 
         if len(member) != number_creategroup:
@@ -408,6 +410,9 @@ class MyGroup(APIView):
             member_list = []
             announce = ""
             groupbooking_list = []
+            thismonth_booking_list = []
+            nextmonth_booking_list = []
+            payment_list = []
 
             if mygroup.is_public is True or is_header or is_member:
                 if is_header:

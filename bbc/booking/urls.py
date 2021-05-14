@@ -12,4 +12,5 @@ urlpatterns = [
     path('history/booking/', views.BookingToPaymentAndCancel.as_view()),
     path('history/refund/', views.SuccessToRefunding.as_view()),
     path('history/payment/', views.HistoryPaymentPersonal.as_view()),
+    path('group/<groupname>/refund/', views.GroupRefund.as_view()),
 ]

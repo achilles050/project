@@ -1,0 +1,121 @@
+{
+    "group_name": "testGroup",
+    "header": "kamthorn",
+    "public": false,
+    "role": "header",
+    "detail": {
+        "announce": "in",
+        "member": [
+            {
+                "number": 1,
+                "id": "9c92f447",
+                "firstname": "kamthorn2",
+                "delete": false
+            },
+            {
+                "number": 2,
+                "id": "99ab2448",
+                "firstname": "kamthorn3",
+                "delete": false
+            }
+        ],
+        "groupbooking": {
+            "this_month": [
+                {
+                    "number": 1,
+                    "weekday": "Monday",
+                    "court": 2,
+                    "time": "14:00-15:00"
+                },
+                {
+                    "number": 2,
+                    "weekday": "Tuesday",
+                    "court": 2,
+                    "time": "19:00-20:00"
+                },
+                {
+                    "number": 3,
+                    "weekday": "Sunday",
+                    "court": 2,
+                    "time": "18:00-19:00"
+                }
+            ],
+            "next_month": [
+                {
+                    "number": 1,
+                    "weekday": "Monday",
+                    "court": 3,
+                    "time": "16:00-17:00"
+                },
+                {
+                    "number": 2,
+                    "weekday": "Monday",
+                    "court": 3,
+                    "time": "17:00-18:00"
+                },
+                {
+                    "number": 3,
+                    "weekday": "Monday",
+                    "court": 3,
+                    "time": "18:00-19:00"
+                },
+                {
+                    "number": 4,
+                    "weekday": "Monday",
+                    "court": 3,
+                    "time": "19:00-20:00"
+                },
+                {
+                    "number": 5,
+                    "weekday": "Tuesday",
+                    "court": 3,
+                    "time": "16:00-17:00"
+                },
+                {
+                    "number": 6,
+                    "weekday": "Tuesday",
+                    "court": 3,
+                    "time": "17:00-18:00"
+                },
+                {
+                    "number": 7,
+                    "weekday": "Tuesday",
+                    "court": 3,
+                    "time": "18:00-19:00"
+                }
+            ]
+        },
+        "payment": [
+            {
+                "number": 1,
+                "date": "25-04-2021 04:54",
+                "price": "999.99",
+                "paymentid": "bc9955e46e914f68ba193a0ee7d58b99"
+            },
+            {
+                "number": 2,
+                "date": "25-04-2021 04:54",
+                "price": "999.99",
+                "paymentid": "eb1fad7b7a6b421e828ebe231a81c52a"
+            },
+            {
+                "number": 3,
+                "date": "06-05-2021 21:21",
+                "price": "2420.00",
+                "paymentid": "146116a9da794aacaf9a3a24c1beceb0"
+            },
+            {
+                "number": 4,
+                "date": "09-05-2021 21:57",
+                "price": "2500.00",
+                "paymentid": "818a3ac014a74225b5ba3a91a906a88b"
+            },
+            {
+                "number": 5,
+                "date": "10-05-2021 18:07",
+                "price": "2720.00",
+                "paymentid": "a59d723716fe48c6831f3568f8dad804"
+            }
+        ]
+    }
+}

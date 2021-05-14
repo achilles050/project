@@ -2,9 +2,12 @@ import json
 from datetime import time, timedelta, date
 from uuid import uuid4
 import calendar
+import urllib.parse
 
 from . import models
 from . import book
+from member import group
+from .book import AddMonths
 
 from member import models as mem_models
 from . import serializers
@@ -213,7 +216,6 @@ class Booking(APIView):
             response_dict['price']['pay'] = all_price_normal - \
                 all_ds_time-all_ds_mem
             return JsonResponse(response_dict)
-        return HttpResponse('??????')
 
 
 class GroupBooking(APIView):
@@ -257,7 +259,7 @@ class GroupBooking(APIView):
             gapday = q_allcourtinfo.groupbooking_lastmonth_day
             gapdate = timezone.make_aware(
                 datetime(dt_now.year, dt_now.month, gapday))
-            if dt_now >= gapdate:
+            if dt_now > gapdate:
                 for intday, intday2 in enumerate(dayrange):
                     day = calendar.monthcalendar(date_nm.year, date_nm.month)[
                         1][intday2]
@@ -297,7 +299,10 @@ class GroupBooking(APIView):
                             str_court = 'Court'+str(c)
                             check_history = book.check_valid_group_history(
                                 court=c, mytime=t, mydate=history_mydate)
-                            if book.check_valid_group(court=c, mytime=t, mydate=mydate) and check_history:
+                            check_yourhistory = book.check_valid_group_history_for_booking(
+                                court=c, mytime=t, mydate=history_mydate, mygroup=q_group)
+                            check_all = check_history or check_yourhistory
+                            if book.check_valid_group(court=c, mytime=t, mydate=mydate) and check_all:
                                 inner_status_list[i][str_court] = True
                             else:
                                 inner_status_list[i][str_court] = False
@@ -339,7 +344,7 @@ class GroupBooking(APIView):
             data['group'] = q_group.group_name
             data['status'] = status_list
             data['booking_history'] = history_groupbooking_list
-            data['eachcourt_info'] = s_eachcourtinfo.data
+            # data['eachcourt_info'] = s_eachcourtinfo.data
 
             print(datetime.now())
             return JsonResponse(data)
@@ -412,18 +417,19 @@ class GroupBooking(APIView):
 
                 valid_history = book.check_valid_group_history(
                     court=court, mydate=thismonth_date, mytime=mytime)
-                valid_yourhsitory = book.check_valid_group_history_for_booking(
+                valid_yourhistory = book.check_valid_group_history_for_booking(
                     court=court, mydate=thismonth_date, mytime=mytime, mygroup=q_group)
-                valid_thismonth = valid_history or valid_yourhsitory
+                valid_thismonth = valid_history or valid_yourhistory
 
                 for day in calendar.monthcalendar(mydate.year, mydate.month):
                     if day[day_of_week] != 0:
                         booking_date = date(
                             mydate.year, mydate.month, day[day_of_week])
                         booking_date_list.append(booking_date)
-                        book.check_valid_group(
+                        check_valid_group = book.check_valid_group(
                             court=court, mytime=mytime, mydate=booking_date)
-                        if book.check_valid_group(court=court, mytime=mytime, mydate=booking_date) and valid_thismonth:
+
+                        if check_valid_group and valid_thismonth:
                             booking_datetime = timezone.make_aware(
                                 datetime.combine(booking_date, time(mytime)))
                             bookingid = uuid4().hex
@@ -606,8 +612,8 @@ class Payment(APIView):
             q_group = None
         for bookingid in all_bookingid:
             now = timezone.make_aware(datetime.now())
-            q_bookingid = models.Booking.objects.filter(bookingid=bookingid).filter(payment_state=0).exclude(
-                exp_datetime__lt=now).exists()
+            q_bookingid = models.Booking.objects.filter(bookingid=bookingid).filter(
+                member=member).filter(payment_state=0).exclude(exp_datetime__lt=now).exists()
 
             if q_bookingid:
                 q_booking = models.Booking.objects.get(bookingid=bookingid)
@@ -642,10 +648,11 @@ class Refunding(APIView):
         data = request.data
         action = data['action']
         all_bookingid = data['bookingid']
+
+        if len(all_bookingid) == 0:
+            return JsonResponse({'msg': 'Try Again not have any bookingid', 'success': False})
         banking_id = data['banking_id']
         banking_name = data['banking_name']
-        # banking_id = 1234567890
-        # banking_name = 'test'
         refund_obj_list = list()
         price = 0
         for bookingid in all_bookingid:
@@ -679,6 +686,129 @@ class Refunding(APIView):
         return JsonResponse({'msg': 'Refund successful', 'success': True})
 
 
+class GroupRefund(APIView):
+    def get(self, request, groupname):
+        try:
+            groupname = urllib.parse.unquote_plus(groupname)
+            if request.user.id is not None:
+                mygroup = mem_models.Group.objects.get(group_name=groupname)
+                groupid = mygroup.id
+                is_header = group.group_head_per(
+                    groupid=groupid, memberid=request.user.id)
+                if not is_header:
+                    return JsonResponse({'msg': "You're not header", 'success': False})
+            else:
+                return JsonResponse({'msg': "Pls login", 'success': False})
+            q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+            date_now = datetime.now().date()
+
+            gapday = q_allcourtinfo.groupbooking_lastmonth_day
+            gapdate = timezone.make_aware(
+                datetime(date_now.year, date_now.month, gapday))
+
+            if date_now > gapdate:
+                return JsonResponse({'msg': 'cant refund', 'success': False})
+
+            date_nextmonth = AddMonths(date_now, 1)
+            nextmonth_booking_list = group.group_booking_by_date(
+                mydate=date_nextmonth, mygroup=mygroup)
+
+            data = {'group_booking': nextmonth_booking_list}
+            return JsonResponse(data)
+
+        except Exception as e:
+            print(e)
+            return JsonResponse({'msg': 'error', 'success': False})
+
+    def post(self, request, groupname):
+        try:
+            groupname = urllib.parse.unquote_plus(groupname)
+            if request.user.id is not None:
+                mygroup = mem_models.Group.objects.get(group_name=groupname)
+                groupid = mygroup.id
+                is_header = group.group_head_per(
+                    groupid=groupid, memberid=request.user.id)
+                if not is_header:
+                    return JsonResponse({'msg': "You're not header", 'success': False})
+            else:
+                return JsonResponse({'msg': "Pls login", 'success': False})
+            q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+            date_now = datetime.now().date()
+
+            gapday = q_allcourtinfo.groupbooking_lastmonth_day
+            gapdate = timezone.make_aware(
+                datetime(date_now.year, date_now.month, gapday))
+
+            if date_now > gapdate:
+                return JsonResponse({'msg': 'cant refund', 'success': False})
+
+            date_nextmonth = AddMonths(date_now, 1)
+            nextmonth_booking_list = group.group_booking_by_date2(
+                mydate=date_nextmonth, mygroup=mygroup)
+
+            data = request.data
+            group_booking_list = data['group_booking']
+            banking_id = data['banking_id']
+            banking_name = data['banking_name']
+            price = 0
+            booking_list = []
+
+            for value in group_booking_list:
+                if value in nextmonth_booking_list:
+                    strday = value['weekday']
+                    mytime = int(value['time'][:2])
+                    court = value['court']
+                    mydate = date_nextmonth
+                    day_of_week = list(calendar.day_name).index(strday)
+                    for day in calendar.monthcalendar(mydate.year, mydate.month):
+                        if day[day_of_week] != 0:
+                            booking_date = date(
+                                mydate.year, mydate.month, day[day_of_week])
+                            booking_datetime = timezone.make_aware(
+                                datetime.combine(booking_date, time(mytime)))
+                            booking_list.append({'datetime': booking_datetime,
+                                                 'court': court})
+                else:
+                    return JsonResponse({'msg': 'your data not correct', 'success': False})
+
+            refund_obj_list = []
+            for value in booking_list:
+                try:
+                    obj = models.Booking.objects.get(
+                        booking_datetime=value['datetime'], court=value['court'], group=mygroup, payment_state=1, is_deleted=False)
+                except Exception as e:
+                    print(e)
+                    return JsonResponse({'msg': 'your data not found',
+                                         'success': False})
+
+                price += obj.price_pay
+                refund_obj_list.append(obj)
+
+            while True:
+                refundid = uuid4().hex
+                refund_obj, refund_created = models.Refund.objects.get_or_create(
+                    refundid=refundid,
+                    price=price,
+                    member_id=request.user.id,
+                    group=mygroup,
+                    bank_acc_id=banking_id,
+                    bank_acc_name=banking_name
+                )
+
+                if refund_created:
+                    break
+
+            for value in refund_obj_list:
+                value.payment_state = 3
+                value.refundid = refund_obj.refundid
+                value.save()
+
+            return JsonResponse({'msg': 'ok', 'success': True})
+        except Exception as e:
+            print(e)
+            return JsonResponse({'msg': 'error', 'success': False})
+
+
 class History(APIView):
     def get(self, request):
         if request.user.id is None:
@@ -698,12 +828,14 @@ class History(APIView):
             booking_list[i]['number'] = i+1
             if booking_q[i].payment_state == 0:
                 booking_list[i]['state'] = 'booking'
-                booking_list[i]['timeout'] = booking_q[i].exp_datetime
+                booking_list[i]['timeout'] = booking_q[i].exp_datetime.strftime(
+                    "%d-%m-%Y %H:%M")
                 booking_list[i]['action'] = ['pay', 'cancel']
             elif booking_q[i].payment_state == 1:
                 booking_list[i]['state'] = 'success'
                 if booking_q[i].booking_datetime > refund_datetime:
-                    booking_list[i]['timeout'] = booking_q[i].booking_datetime - refund_dur
+                    booking_list[i]['timeout'] = (
+                        booking_q[i].booking_datetime - refund_dur).strftime("%d-%m-%Y %H:%M")
                     booking_list[i]['action'] = ['refund']
                 else:
                     booking_list[i]['timeout'] = None
@@ -741,7 +873,8 @@ class BookingToPaymentAndCancel(APIView):
         booking_list = list(booking_s.data)
         for i in range(len(booking_list)):
             booking_list[i]['number'] = i+1
-            booking_list[i]['timeout'] = booking_q[i].exp_datetime
+            booking_list[i]['timeout'] = booking_q[i].exp_datetime.strftime(
+                "%d-%m-%Y %H:%M")
 
         return JsonResponse({'data': booking_list, 'success': True})
 
@@ -788,7 +921,8 @@ class SuccessToRefunding(APIView):
         booking_list = list(booking_s.data)
         for i in range(len(booking_list)):
             booking_list[i]['number'] = i+1
-            booking_list[i]['timeout'] = booking_q[i].booking_datetime - refund_dur
+            booking_list[i]['timeout'] = (
+                booking_q[i].booking_datetime - refund_dur).strftime("%d-%m-%Y %H:%M")
 
         return JsonResponse({'data': booking_list, 'success': True})
 

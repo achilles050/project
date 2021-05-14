@@ -1,5 +1,4 @@
 from . import models
-from member.models import Member
 from datetime import time, datetime, date  # , timedelta
 from django.core.mail import send_mail
 from django.utils import timezone
@@ -93,7 +92,7 @@ def check_valid_group_history(court, mytime, mydate):
         valid = not models.Booking.objects.filter(booking_datetime=dt).filter(
             court_id__court_number=court).filter(payment_state=1).filter(is_deleted=False).exclude(group=None).exists()
         return valid
-    except:
+    except Exception as e:
         print('Error is : ', e)
         return None
 
@@ -102,20 +101,20 @@ def check_valid_group_history_for_booking(court, mydate, mytime, mygroup):
     try:
         dt = timezone.make_aware(datetime.combine(mydate, time(mytime)))
         valid = models.Booking.objects.filter(booking_datetime=dt).filter(
-            court_id__court_number=court).filter(payment_state=1).filter(group=mygroup).filter(is_deleted=False).exists()
+            court_id__court_number=court).filter(payment_state=1).filter(is_deleted=False).filter(group=mygroup).exists()
         return valid
-    except:
+    except Exception as e:
         print('Error is : ', e)
         return None
 
 
-def refund_check(history_id):
-    try:
-        m = models.HistoryMember.objects.filter(
-            id=history_id).filter(status=True)
-        print('ok')
-    except:
-        print('error!!!')
+# def refund_check(history_id):
+#     try:
+#         m = models.HistoryMember.objects.filter(
+#             id=history_id).filter(status=True)
+#         print('ok')
+#     except:
+#         print('error!!!')
 
 
 # def sendemail():
