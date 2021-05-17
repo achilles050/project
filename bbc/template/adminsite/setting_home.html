@@ -1,0 +1,7 @@
+{% extends 'adminsite/base_admin.html' %}
+{% block content %}
+<a href="{% url 'allcourt_setting' %}">All Court Setting</a>
+{% for id in court_number%}
+    <a href="{% url 'eachcourt_setting' court_number=id %}">Court {{id}}</a>
+{% endfor %}
+{% endblock %}

@@ -1,6 +1,21 @@
 <html>
     <header>
         <title>{% block title %}{% endblock %}</title>
+        <style>
+            form {
+                text-align: center;
+            }
+            table.center {
+                width: auto;
+                margin-left:auto; 
+                margin-right:auto;
+                text-align: center;
+            }
+            tr {
+                vertical-align: top;
+                text-align: left;
+            }
+        </style>
     </header>
     <body>
         {% block content %}

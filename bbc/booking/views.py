@@ -164,7 +164,6 @@ class Booking(APIView):
             if book.check_valid(court=court, mytime=mytime, mydate=booking_date):
                 booking_datetime = timezone.make_aware(
                     datetime.combine(booking_date, time(mytime)))
-                bookingid = uuid4().hex
                 q_court = models.EachCourtInfo.objects.get(court_number=court)
                 price_normal = q_court.price_normal
                 ds_mem = q_court.price_ds_mem if request.user.id is not None else 0
@@ -175,7 +174,14 @@ class Booking(APIView):
                 if not mytime in range(int(ds_time_start), int(ds_time_end)):
                     ds_time = 0
 
-                booking_obj, booking_created = models.Booking.objects.get_or_create(
+                while True:
+                    bookingid = uuid4().hex
+                    if booking_models.Booking.objects.filter(bookingid=bookingid).exists():
+                        pass
+                    else:
+                        break
+
+                booking_obj, booking_created = booking_models.Booking.objects.get_or_create(
                     name=name,
                     email=email,
                     tel=tel,
@@ -815,7 +821,7 @@ class History(APIView):
             return JsonResponse({'msg': 'Pls login', 'success': False})
         q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
         dt_now = timezone.make_aware(datetime.now())
-        refund_dur = q_allcourtinfo.refund_duration
+        refund_dur = q_allcourtinfo.refund_member_duration
         refund_datetime = dt_now+refund_dur
         booking_q = models.Booking.objects.filter(
             member_id=request.user.id).filter(group=None).exclude(exp_datetime__lt=dt_now).filter(is_deleted=False)
@@ -911,7 +917,7 @@ class SuccessToRefunding(APIView):
             return JsonResponse({'msg': 'Pls login', 'success': False})
         q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
         dt_now = timezone.make_aware(datetime.now())
-        refund_dur = q_allcourtinfo.refund_duration
+        refund_dur = q_allcourtinfo.refund_member_duration
         refund_datetime = dt_now+refund_dur
         booking_q = models.Booking.objects.filter(
             member_id=request.user.id).filter(group=None).filter(payment_state=1).filter(booking_datetime__gt=refund_datetime)

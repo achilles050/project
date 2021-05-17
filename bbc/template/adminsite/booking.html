@@ -1,7 +1,6 @@
 {% extends 'adminsite/base_admin.html' %}
 {% block content %}
-<h1>Update</h1>
-<form method="post">
+<form method="post" > 
     <table class='center'>
     {% csrf_token %} 
     {{ form.as_table }} 

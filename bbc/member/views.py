@@ -48,14 +48,14 @@ from django.utils.encoding import force_bytes
 # Create your views here.
 
 
-@api_view(['GET', 'POST'])
-def Index(request):
-    print(f'Index {request.user}')
-    try:
-        models.Member.objects.get(username=request.user)
-        return HttpResponse(f'hi user!!! {request.user}')
-    except:
-        return HttpResponse('hi guest!!!')
+# @api_view(['GET', 'POST'])
+# def Index(request):
+#     print(f'Index {request.user}')
+#     try:
+#         models.Member.objects.get(username=request.user)
+#         return HttpResponse(f'hi user!!! {request.user}')
+#     except:
+#         return HttpResponse('hi guest!!!')
 
 
 @api_view(['GET', 'POST', 'PUT'])
@@ -95,6 +95,15 @@ def Register(request):
 
     else:
         return HttpResponse('Try Again!!!')
+
+
+class Index(APIView):
+    def get(self, request):
+        info = booking_models.AllCourtInfo.objects.all()[0]
+        announce = info.announce
+        contacts = info.contacts
+        rules = info.rules
+        return JsonResponse({'announce': announce, 'contacts': contacts, 'rules': rules, 'member': str(request.user)})
 
 
 class Register2(APIView):

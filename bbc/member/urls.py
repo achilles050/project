@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 
 urlpatterns = [
 
-    path('', views.Index),
+    path('', views.Index.as_view()),
     path('register/', views.Register),
     path('register2/', views.Register2.as_view()),
     path('activate_email/<uidb64>/<token>/',

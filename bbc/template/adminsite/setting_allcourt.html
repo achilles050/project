@@ -2,8 +2,10 @@
 {% block content %}
 <h1>Update</h1>
 <form method="post"> 
+    <table class='center'>
     {% csrf_token %} 
-    {{ form.as_p }} 
+    {{ form.as_table }} 
+    </table>
     <input type="submit" value="Save"> 
 </form>
 {% endblock %}
