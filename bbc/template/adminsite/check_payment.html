@@ -1,0 +1,28 @@
+{% extends 'adminsite/base_admin.html' %}
+{% block content %}
+<form action="{% url 'check_payment' %}" method="POST">
+    <table>
+        {% for payment in form %}
+        <tr>
+            <td>
+                {{ payment.timestamp }}
+            </td>
+            <td>
+                {{ payment.pay }} baht
+            </td>
+            <td>
+                    <button type="submit" formmethod="post" name="found" value="{{ payment.paymentid }}">Found</button>
+                    <button type="submit" formmethod="post" name="not_found" value="{{ payment.paymentid }}">Not Found</button>
+            </td>
+            <td>
+                {% if not payment.is_checked %}
+                    Uncheck
+                {% else %}
+                    Checked
+                {% endif %}
+            </td>
+        </tr>    
+        {% endfor %}
+    </table>
+</form>
+{% endblock %}

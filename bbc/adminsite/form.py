@@ -192,13 +192,7 @@ class MemberForm(forms.ModelForm):
         }
 
 
-class StatusForm(forms.Form):
-    q_allcourt = AllCourtInfo.objects.all()[0]
-    range_booking = q_allcourt.range_booking
-    print(type(range_booking))
-    dt_now = timezone.make_aware(datetime.now())
-    dt_range = dt_now + range_booking
-    # date = forms.DateField(widget=forms.SelectDateWidget(
-    #     days=range(dt_now.day, dt_range.day)))
-    date = forms.DateField(widget=forms.SelectDateWidget(
-        empty_label=("Choose Year", "Choose Month", "Choose Day")))
+class CheckPaymentForm(forms.ModelForm):
+    class Meta:
+        model = booking_models.Payment
+        fields = ('__all__')

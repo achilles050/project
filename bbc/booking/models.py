@@ -74,7 +74,7 @@ class Booking(models.Model):
         max_digits=5, decimal_places=2)  # each booking slot
     price_pay = models.DecimalField(
         max_digits=5, decimal_places=2)  # each booking slot
-    # 0 = booking, 1 = success, 2 = checking payment, 3 = refunded, 4 = checkedPayment false(checking not found transaction)
+    # 0 = booking, 1 = success, 2 = refunded, 3 = checkedPayment false(checking not found transaction)
     payment_state = models.IntegerField(default=0)
     timestamp = models.DateTimeField(
         default=timezone.make_aware(datetime.now()))  # time now when booking

@@ -198,31 +198,99 @@ class DetailMember(PermissionRequiredMixin, UpdateView):
     success_url = '/adminsite/member/'
 
 
-class Status(PermissionRequiredMixin, View):
+class CheckPayment(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
 
     def get(self, request):
-        myform = form.StatusForm
-        return render(request, 'adminsite/status.html', {'form': myform})
+        q_payment = booking_models.Payment.objects.all().order_by('is_checked', '-timestamp')
+        return render(request, 'adminsite/check_payment.html', {'form': q_payment})
 
     def post(self, request):
-        return StatusDetail().get(request)
+        found = request.POST.get('found', None)
+        not_found = request.POST.get('not_found', None)
+
+        q_payment = booking_models.Payment.objects.all().order_by('is_checked', '-timestamp')
+
+        if found == not_found:
+            return render(request, 'adminsite/check_payment.html', {'form': myform})
+
+        if found is not None:
+            q_booking = booking_models.Booking.objects.filter(paymentid=found)
+            for value in q_booking:
+                value.payment_state = 1
+                value.is_deleted = False
+                value.save()
+            mypayment = booking_models.Payment.objects.get(paymentid=found)
+            mypayment.is_checked = True
+            mypayment.save()
+
+        elif not_found is not None:
+            q_booking = booking_models.Booking.objects.filter(
+                paymentid=not_found)
+            for value in q_booking:
+                value.payment_state = 3
+                value.is_deleted = True
+                value.save()
+            mypayment = booking_models.Payment.objects.get(paymentid=not_found)
+            mypayment.is_checked = True
+            mypayment.save()
+
+        q_payment = booking_models.Payment.objects.all().order_by('is_checked', '-timestamp')
+
+        return render(request, 'adminsite/check_payment.html', {'form': q_payment})
 
 
-class StatusDetail(PermissionRequiredMixin, View):
+class CheckRefund(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
 
     def get(self, request):
-        date = request.POST
-        if not request.GET._mutable:
-            request.GET._mutable = True
+        q_refund = booking_models.Refund.objects.all().order_by('is_refunded', 'timestamp')
+        return render(request, 'adminsite/check_refund.html', {'form': q_refund})
 
-        print(date)
-        date = date['date_year'] + \
-            '%02d' % int(date['date_month'])+'%02d' % int(date['date_day'])
+    def post(self, request):
+        check = request.POST.get('check', None)
+        uncheck = request.POST.get('uncheck', None)
 
-        request.GET['d'] = date
-        data = booking_status().get(request)
-        print(data.content)
-        myform = form.StatusForm
-        return render(request, 'adminsite/status.html', {'form': myform})
+        q_refund = booking_models.Refund.objects.all().order_by('is_refunded', 'timestamp')
+
+        if check == uncheck:
+            return render(request, 'adminsite/check_refund.html', {'form': q_refund})
+
+        if check is not None:
+            myrefund = booking_models.Refund.objects.get(refundid=check)
+            myrefund.is_refunded = True
+            myrefund.save()
+
+        elif uncheck is not None:
+            myrefund = booking_models.Refund.objects.get(refundid=uncheck)
+            myrefund.is_refunded = False
+            myrefund.save()
+
+        q_refund = booking_models.Refund.objects.all().order_by('is_refunded', 'timestamp')
+
+        return render(request, 'adminsite/check_refund.html', {'form': q_refund})
+
+
+class Income(PermissionRequiredMixin, View):
+    permission_required = 'is_staff'
+
+    def get(self, request):
+        month_list = list(range(1, 13))
+        year = 2021
+        income_list = []
+        for month in month_list:
+            income = 0
+            # q_month = booking_models.Payment.objects.filter(
+            #     is_founded=True).filter(timestamp__year=year).filter(timestamp__month=month)
+            q_month = booking_models.Booking.objects.filter(payment_state=1).filter(
+                is_deleted=False).filter(booking_datetime__year=year).filter(booking_datetime__month=month)
+            for value in q_month:
+                income += value.price_pay
+            income_list.append(income)
+        print(income_list)
+        labels = month_list
+        data = income_list
+        return render(request, 'adminsite/income.html', {'labels': labels,
+                                                         'data': data,
+                                                         })
+        # return HttpResponse('ok')

@@ -14,6 +14,7 @@ urlpatterns = [
     path('booking/', views.AdminBooking.as_view(), name='adminbooking'),
     path('member/', views.ListMember.as_view(), name='member'),
     path('member/<pk>', views.DetailMember.as_view(), name='member_detail'),
-    path('status/', views.Status.as_view(), name='status'),
-
+    path('checkpayment/', views.CheckPayment.as_view(), name='check_payment'),
+    path('checkrefund/', views.CheckRefund.as_view(), name='check_refund'),
+    path('income/', views.Income.as_view(), name='income'),
 ]

@@ -176,12 +176,12 @@ class Booking(APIView):
 
                 while True:
                     bookingid = uuid4().hex
-                    if booking_models.Booking.objects.filter(bookingid=bookingid).exists():
+                    if models.Booking.objects.filter(bookingid=bookingid).exists():
                         pass
                     else:
                         break
 
-                booking_obj, booking_created = booking_models.Booking.objects.get_or_create(
+                booking_obj, booking_created = models.Booking.objects.get_or_create(
                     name=name,
                     email=email,
                     tel=tel,
