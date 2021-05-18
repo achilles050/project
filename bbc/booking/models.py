@@ -19,13 +19,13 @@ class AllCourtInfo(models.Model):
     payment_group_duration = models.DurationField(null=True)
     # group can book same last month this day
 
-    # refund_member_duration = models.DurationField()  # refund duration only
-    refund_duration = models.DurationField()  # refund duration only
+    refund_member_duration = models.DurationField()  # refund duration only
+    # refund_duration = models.DurationField()  # refund duration only
 
-    # refund_member_percent = models.DecimalField(
-    #     max_digits=5, decimal_places=2)  # percent can refund in time
-    refund_percent = models.DecimalField(
+    refund_member_percent = models.DecimalField(
         max_digits=5, decimal_places=2)  # percent can refund in time
+    # refund_percent = models.DecimalField(
+    #     max_digits=5, decimal_places=2)  # percent can refund in time
 
     groupbooking_lastmonth_day = models.PositiveIntegerField(null=True)
     refund_group_day = models.PositiveIntegerField(
@@ -39,8 +39,8 @@ class AllCourtInfo(models.Model):
     num_of_creategroup = models.PositiveIntegerField()
     announce = models.CharField(max_length=1000)  # for annouce information
 
-    # contacts = models.CharField(max_length=500)  # for promote something
-    ads = models.CharField(max_length=500)  # for promote something
+    contacts = models.CharField(max_length=500)  # for promote something
+    # ads = models.CharField(max_length=500)  # for promote something
 
     rules = models.CharField(max_length=1000)  # store rule when go to court
     # store information for payment
