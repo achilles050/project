@@ -95,6 +95,9 @@ class Booking(models.Model):
     # use when delete by member or admin but stored
     is_deleted = models.BooleanField(default=False)
 
+    def get_year(self):
+        return self.booking_datetime.year
+
 
 class Payment(models.Model):
     class Meta:

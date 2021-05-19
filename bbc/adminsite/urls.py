@@ -16,5 +16,6 @@ urlpatterns = [
     path('member/<pk>', views.DetailMember.as_view(), name='member_detail'),
     path('checkpayment/', views.CheckPayment.as_view(), name='check_payment'),
     path('checkrefund/', views.CheckRefund.as_view(), name='check_refund'),
+    path('income_home/', views.IncomeHome.as_view(), name='income_home'),
     path('income/', views.Income.as_view(), name='income'),
 ]

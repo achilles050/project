@@ -1,81 +1,82 @@
 {% extends 'adminsite/base_admin.html' %}
 {% block content %}
-<canvas id="myChart" width="400" height="400"></canvas>
+<canvas id="myChart"></canvas>
 <script>
-var ctx = document.getElementById('myChart').getContext('2d');
-var myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: [{% for dt in labels %} {{dt}}, {% endfor %}],
-        datasets: [{
-            label: '# of Votes',
-            data: [{% for dt in data %} {{dt}}, {% endfor %}],
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1
-        }, {
-            label: 'My First Dataset',
-            data: [{% for dt in data %} {{dt}}, {% endfor %}],
-            fill: false,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-        }],
-    },
-    options: {
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero: true
-                }
-            }]
-        }
-    }
-});
-</script>
-
-
-<canvas id="myChart2" width="400" height="400"></canvas>
-<script>
-var ctx2 = document.getElementById('myChart2').getContext('2d');
-var myChart = new Chart(ctx2, {
-    type: 'line',
-    data: {
-        labels: [{% for dt in labels %} {{dt}}, {% endfor %}],
-        datasets: [{
-            label: 'My First Dataset',
-            data: [{% for dt in data %} {{dt}}, {% endfor %}],
-            fill: false,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-        }, {
-            label: 'My First Dataset',
-            data: [65, 59, 80, 81, 56, 55, 40],
-            fill: false,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1
-        }],
+    var ctx = document.getElementById('myChart').getContext('2d');
+    ctx.width = window.innerWidth;
+    ctx.height = window.innerHeight;
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for dt in labels %} '{{dt}}', {% endfor %}],
+            datasets: [{
+                label: '# of Votes',
+                data: [{% for dt in data %} {{dt}}, {% endfor %}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }],
         },
-});
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
 </script>
 
 
-<canvas id="myChart3" width="400" height="400"></canvas>
+<!-- <canvas id="myChart2"></canvas>
+<script>
+    var ctx2 = document.getElementById('myChart2').getContext('2d');
+    ctx2.width = window.innerWidth;
+    ctx2.height = window.innerHeight;
+    var myChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: [{% for dt in labels %} '{{dt}}', {% endfor %}],
+            datasets: [{
+                label: 'My First Dataset',
+                data: [{% for dt in data %} {{dt}}, {% endfor %}],
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }, {
+                label: 'My First Dataset',
+                data: [65, 59, 80, 81, 56, 55, 40],
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }],
+            },
+    });
+</script> -->
+
+
+<!-- <canvas id="myChart3"></canvas>
+<canvas id="line-chart" width="800" height="450"></canvas>
 <script>
     var ctx3 = document.getElementById('myChart3').getContext('2d');
+    ctx3.width = window.innerWidth-200;
+    ctx3.height = window.innerHeight-200;
     var myChart3 = new Chart(ctx3, {
            type: 'line',
            data: {
@@ -108,5 +109,45 @@ var myChart = new Chart(ctx2, {
              ]
            },
          });
-</script>
+         
+         new Chart(document.getElementById("line-chart"), {
+           type: 'line',
+           data: {
+             labels: [1500,1600,1700,1750,1800,1850,1900,1950,1999,2050],
+             datasets: [{ 
+                 data: [86,114,106,106,107,111,133,221,783,2478],
+                 label: "Africa",
+                 borderColor: "#3e95cd",
+                 fill: false
+               }, { 
+                 data: [282,350,411,502,635,809,947,1402,3700,5267],
+                 label: "Asia",
+                 borderColor: "#8e5ea2",
+                 fill: false
+               }, { 
+                 data: [168,170,178,190,203,276,408,547,675,734],
+                 label: "Europe",
+                 borderColor: "#3cba9f",
+                 fill: false
+               }, { 
+                 data: [40,20,10,16,24,38,74,167,508,784],
+                 label: "Latin America",
+                 borderColor: "#e8c3b9",
+                 fill: false
+               }, { 
+                 data: [6,3,2,2,7,26,82,172,312,433],
+                 label: "North America",
+                 borderColor: "#c45850",
+                 fill: false
+               }
+             ]
+           },
+           options: {
+             title: {
+               display: true,
+               text: 'World population per region (in millions)'
+             }
+           }
+         });
+</script> -->
 {% endblock %}

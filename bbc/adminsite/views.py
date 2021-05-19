@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import permission_required
 
 from uuid import uuid4
 from datetime import timedelta, datetime, time, date
+import calendar
 
 from . import form
 from booking import models as booking_models
@@ -271,26 +272,42 @@ class CheckRefund(PermissionRequiredMixin, View):
         return render(request, 'adminsite/check_refund.html', {'form': q_refund})
 
 
+class IncomeHome(PermissionRequiredMixin, View):
+    permission_required = 'is_staff'
+
+    def get(self, request):
+        myform = form.IncomeForm
+        return render(request, 'adminsite/income_home.html', {'form': myform})
+
+
 class Income(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
 
     def get(self, request):
         month_list = list(range(1, 13))
-        year = 2021
+        labels = [calendar.month_name[i] for i in month_list]  # month_list
+        year = request.GET.get('year', None)
+        if year is None:
+            year = datetime.now().year
+        year = int(year)
+        while True:
+            try:
+                datetime(year, 1, 1)
+                break
+            except Exception as e:
+                year = datetime.now().year
+                break
         income_list = []
-        for month in month_list:
+        income_dict = dict()
+        for i, month in enumerate(month_list):
             income = 0
-            # q_month = booking_models.Payment.objects.filter(
-            #     is_founded=True).filter(timestamp__year=year).filter(timestamp__month=month)
             q_month = booking_models.Booking.objects.filter(payment_state=1).filter(
                 is_deleted=False).filter(booking_datetime__year=year).filter(booking_datetime__month=month)
             for value in q_month:
                 income += value.price_pay
             income_list.append(income)
-        print(income_list)
-        labels = month_list
+            income_dict[labels[i]] = income
         data = income_list
         return render(request, 'adminsite/income.html', {'labels': labels,
                                                          'data': data,
                                                          })
-        # return HttpResponse('ok')

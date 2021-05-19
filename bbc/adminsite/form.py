@@ -79,6 +79,16 @@ def date_choice():
     return date_choice_list
 
 
+def year_choice():
+    q = booking_models.Booking.objects.filter(payment_state=1).filter(
+        is_deleted=False)
+    year_list = list(dict.fromkeys([x.booking_datetime.year for x in q]))
+    year_dict = list()
+    for value in year_list:
+        year_dict.append((value, value))
+    return year_dict
+
+
 class AllCourtForm(forms.ModelForm):
     class Meta:
         model = AllCourtInfo
@@ -196,3 +206,7 @@ class CheckPaymentForm(forms.ModelForm):
     class Meta:
         model = booking_models.Payment
         fields = ('__all__')
+
+
+class IncomeForm(forms.Form):
+    year = forms.ChoiceField(choices=year_choice())
