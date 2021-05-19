@@ -11,8 +11,8 @@ from django.utils.decorators import method_decorator
 urlpatterns = [
 
     path('', views.Index.as_view()),
-    path('register/', views.Register),
-    path('register2/', views.Register2.as_view()),
+    path('register/', views.Register2),
+    path('register2/', views.Register.as_view()),
     path('activate_email/<uidb64>/<token>/',
          views.ActivateEmail.as_view(), name='activate_email'),
 
@@ -33,7 +33,4 @@ urlpatterns = [
         template_name="users/password_reset.html"), name="password_reset"),
     path('test3/', PasswordResetView.as_view()),
     # path('test4/', views.password_reset_done, name="password_reset_done")
-
-
-    path('t/', views.T.as_view()),
 ]

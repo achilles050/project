@@ -1,13 +1,15 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django import forms
+from django.urls import reverse
 from django.http.response import JsonResponse
 from django.views.generic import CreateView, DetailView, UpdateView, ListView, View
 from django.utils import timezone
-
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import permission_required
-
+from rest_framework.views import APIView
 from uuid import uuid4
 from datetime import timedelta, datetime, time, date
 import calendar
@@ -18,13 +20,41 @@ from booking import book
 from booking.views import Booking as booking_status
 from member import models as member_models
 
-# Create your views here.
+
+class LoginForm(forms.Form):
+    username = forms.CharField(max_length=20)
+    password = forms.CharField(widget=forms.PasswordInput)
 
 
-# @staff_member_required
-# @permission_required('is_staff')  # , login_url='/login/')
+class Login(APIView):
+    def get(self, request):
+        return render(request, 'adminsite/login.html', {'form': LoginForm})
+
+    def post(self, request):
+        username = request.data['username']
+        password = request.data['password']
+        auth = authenticate(username=username, password=password)
+        if auth is not None:
+            login(request, auth)
+            return redirect('/adminsite/')
+        else:
+            return JsonResponse({'message': 'try again'}, status=404)
+
+
+def Logout(request):
+    try:
+        print('going to logout')
+        logout(request)
+        print('logouted')
+        return JsonResponse({'msg': 'logout successfully'}, status=200)
+    except Exception as e:
+        print(e)
+        return JsonResponse({'msg': 'error'}, status=404)
+
+
 class AdminHome(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         return render(request, 'adminsite/home.html')
@@ -32,6 +62,7 @@ class AdminHome(PermissionRequiredMixin, View):
 
 class SettingHome(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         court_number = booking_models.EachCourtInfo.objects.values_list(
@@ -41,6 +72,7 @@ class SettingHome(PermissionRequiredMixin, View):
 
 class AllCourtSetting(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         query_obj = booking_models.AllCourtInfo.objects.values().all()[0]
@@ -58,6 +90,7 @@ class AllCourtSetting(PermissionRequiredMixin, View):
 
 class EachCourtSetting(PermissionRequiredMixin, UpdateView):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     form_class = form.EachCourtForm
     model = booking_models.EachCourtInfo
@@ -69,6 +102,7 @@ class EachCourtSetting(PermissionRequiredMixin, UpdateView):
 
 class AdminBooking(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         dt_now = datetime.now()
@@ -181,6 +215,9 @@ class AdminBooking(PermissionRequiredMixin, View):
 
 
 class ListMember(ListView):
+    permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
+
     model = member_models.Member
     template_name = 'adminsite/member.html'
 
@@ -192,6 +229,7 @@ class ListMember(ListView):
 
 class DetailMember(PermissionRequiredMixin, UpdateView):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     form_class = form.MemberForm
     model = member_models.Member
@@ -201,6 +239,7 @@ class DetailMember(PermissionRequiredMixin, UpdateView):
 
 class CheckPayment(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         q_payment = booking_models.Payment.objects.all().order_by('is_checked', '-timestamp')
@@ -243,6 +282,7 @@ class CheckPayment(PermissionRequiredMixin, View):
 
 class CheckRefund(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         q_refund = booking_models.Refund.objects.all().order_by('is_refunded', 'timestamp')
@@ -274,6 +314,7 @@ class CheckRefund(PermissionRequiredMixin, View):
 
 class IncomeHome(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         myform = form.IncomeForm
@@ -282,6 +323,7 @@ class IncomeHome(PermissionRequiredMixin, View):
 
 class Income(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
+    login_url = '/adminsite/login/'  # reverse('admin_login')
 
     def get(self, request):
         month_list = list(range(1, 13))

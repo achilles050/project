@@ -1,9 +1,21 @@
 {% extends 'adminsite/base_admin.html' %}
+{% block title %} Admin Check Payment Page {% endblock %}
 {% block content %}
+<h1>Check Payment Page</h1>
 <form action="{% url 'check_payment' %}" method="POST">
     <table>
+        <tr>
+            <td>PaymentID</td>
+            <td>DateTime</td>
+            <td>Price</td>
+            <td></td>
+            <td>State</td>
+        </tr>
         {% for payment in form %}
         <tr>
+            <td>
+                {{ payment.paymentid }}
+            </td>
             <td>
                 {{ payment.timestamp }}
             </td>

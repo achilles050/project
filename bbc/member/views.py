@@ -59,39 +59,42 @@ from django.utils.encoding import force_bytes
 
 
 @api_view(['GET', 'POST', 'PUT'])
-def Register(request):
+def Register2(request):
     if request.method == 'POST':
+        print(request.POST)
         username = request.data['username']
         password = request.data['password']
+        password2 = request.data['confirmpass']
         firstname = request.data['firstname']
         lastname = request.data['lastname']
         email = request.data['email']
         tel = '00000221'  # request.data['tel']
         birthday = '1999/03/15'  # request.data['birthday']
         gender = 'male'  # request.data['gender']
+        print(password2)
+        # try:
+        #     if not models.Member.objects.filter(email=email).exists():
+        #         b = birthday.split('/')
+        #         birth = date(int(b[0]), int(b[1]), int(b[2]))
+        #         print(birth)
+        #         regis = models.Member.objects.create_user(
+        #             username=username, password=password, email=email)
+        #         regis.first_name = firstname
+        #         regis.last_name = lastname
+        #         regis.tel = tel
+        #         regis.birthday = birth
+        #         regis.gender = gender
+        #         # regis.is_active = False
+        #         regis.save()
+        #         print('Register Success')
+        #         return HttpResponse("Register Success")
+        #     else:
+        #         return HttpResponse("Email does exists")
+        return HttpResponse('ok')
 
-        try:
-            if not models.Member.objects.filter(email=email).exists():
-                b = birthday.split('/')
-                birth = date(int(b[0]), int(b[1]), int(b[2]))
-                print(birth)
-                regis = models.Member.objects.create_user(
-                    username=username, password=password, email=email)
-                regis.first_name = firstname
-                regis.last_name = lastname
-                regis.tel = tel
-                regis.birthday = birth
-                regis.gender = gender
-                # regis.is_active = False
-                regis.save()
-                print('Register Success')
-                return HttpResponse("Register Success")
-            else:
-                return HttpResponse("Email does exists")
-
-        except Exception as e:
-            print('Error !!! >>> ', e)
-            return HttpResponse('Register Error!!! ', e)
+        # except Exception as e:
+        #     print('Error !!! >>> ', e)
+        #     return HttpResponse('Register Error!!! ', e)
 
     else:
         return HttpResponse('Try Again!!!')
@@ -106,21 +109,32 @@ class Index(APIView):
         return JsonResponse({'announce': announce, 'contacts': contacts, 'rules': rules, 'member': str(request.user)})
 
 
-class Register2(APIView):
+class Register(APIView):
     def post(self, request):
         data = request.data
         username = data['username']
         password = data['password']
+        password2 = data['confirmpass']
+        firstname = data['firstname']
+        lastname = data['lastname']
         email = data['email']
+        # tel = '00000221'
+        tel = data['tel']
         try:
             user = models.Member.objects.create_user(
-                username=username, password=password, email=email, is_active=False)
-        except:
-            user = models.Member.objects.get(username=username)
-            # return JsonResponse({'msg': 'Try again!!!'})
+                username=username, password=password, email=email, is_active=True)
+            user.first_name = firstname
+            user.last_name = lastname
+            user.tel = tel
+            user.is_active = False
+            user.save()
+        except Exception as e:
+            print(e)
+            # user = models.Member.objects.get(username=username)
+            return JsonResponse({'msg': 'Try again!!!'})
 
         context = {
-            'user': username+settings.DEFAULT_FROM_EMAIL,
+            'user': username,
             'email': email,
             'protocol': 'https' if request.is_secure() else "http",
             'domain': request.get_host(),
@@ -128,12 +142,12 @@ class Register2(APIView):
             'token': account_activation_token.make_token(user)
         }
         print(settings.DEFAULT_FROM_EMAIL)
-        html = render_to_string('registration/activate_email.html', context)
-        # text = render_to_string('registration/activate_email.txt', context)
+        # html = render_to_string('registration/activate_email.html', context)
+        text = render_to_string('registration/activate_email.txt', context)
         send_mail(
             'Verify email to Activate your account',
-            message=None,
-            html_message=html,
+            message=text,
+            # html_message=html,
             recipient_list=[email],
             from_email=None,
             fail_silently=False,
@@ -188,15 +202,6 @@ class ResetPassword(APIView):
             fail_silently=False,
         )
         return JsonResponse({'msg': 'Pls check your email to do next step'})
-
-
-class T(APIView, PasswordResetView):
-
-    def get_form(self):
-        pass
-
-    def get(self, request):
-        return JsonResponse({'msg': 'hi'})
 
 
 class Login(APIView):

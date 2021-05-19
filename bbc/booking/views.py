@@ -22,6 +22,8 @@ from django.forms.models import model_to_dict
 # from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 from django.utils.datetime_safe import datetime
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
 
 from rest_framework.views import APIView
 # Create your views here.
@@ -642,6 +644,18 @@ class Payment(APIView):
                 value.paymentid = payment_obj.paymentid
                 value.exp_datetime = None
                 value.save()
+            email = booking_obj_list[0].email
+            html = render_to_string('booking_success.html', {'object': booking_obj_list,
+                                                             'paymentid': payment_obj.paymentid})
+            send_mail(
+                'Booking Badminton Court Successfully',
+                message=None,
+                html_message=html,
+                recipient_list=[email],
+                from_email=None,
+                fail_silently=False,
+            )
+
             return JsonResponse({'message': 'confirm success', 'success': True})
         else:
             return JsonResponse({'message': 'confirm unsuccess', 'success': False}, status=400)
@@ -907,6 +921,17 @@ class BookingToPaymentAndCancel(APIView):
                 value.exp_datetime = None
                 value.is_deleted = True
                 value.save()
+            email = booking_obj_list[0].email
+            html = render_to_string('booking_success.html', {'object': booking_obj_list,
+                                                             'paymentid': payment_obj.paymentid})
+            send_mail(
+                'Booking Badminton Court Successfully',
+                message=None,
+                html_message=html,
+                recipient_list=[email],
+                from_email=None,
+                fail_silently=False,
+            )
 
             return JsonResponse({'msg': 'Cancel successful', 'success': False})
 
