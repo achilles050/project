@@ -9,7 +9,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import permission_required
-from rest_framework.views import APIView
 from uuid import uuid4
 from datetime import timedelta, datetime, time, date
 import calendar
@@ -17,8 +16,8 @@ import calendar
 from . import form
 from booking import models as booking_models
 from booking import book
-from booking.views import Booking as booking_status
 from member import models as member_models
+from django.contrib.auth.models import User
 
 
 class LoginForm(forms.Form):
@@ -26,19 +25,44 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
 
 
-class Login(APIView):
+class Login(View):
     def get(self, request):
         return render(request, 'adminsite/login.html', {'form': LoginForm})
 
     def post(self, request):
-        username = request.data['username']
-        password = request.data['password']
+        username = request.POST['username']
+        password = request.POST['password']
         auth = authenticate(username=username, password=password)
         if auth is not None:
             login(request, auth)
             return redirect('/adminsite/')
         else:
-            return JsonResponse({'message': 'try again'}, status=404)
+            return HttpResponse('try again')
+
+
+class RegisterForm(forms.Form):
+    username = forms.CharField(max_length=50)
+    password = forms.CharField(widget=forms.PasswordInput)
+
+
+class Register(PermissionRequiredMixin, View):
+    permission_required = 'is_staff'
+    login_url = '/adminsite/login/'
+
+    def get(self, request):
+        return render(request, 'adminsite/register.html', {'form': RegisterForm})
+
+    def post(self, request):
+        data = request.POST
+        username = data['username']
+        password = data['password']
+        try:
+            user = User.objects.create_user(
+                username=username, password=password, is_staff=True, is_superuser=True)
+        except Exception as e:
+            print(f'Error: {e}')
+            return render(request, 'adminsite/register.html', {'form': RegisterForm})
+        return HttpResponse('Register Successful')
 
 
 def Logout(request):
@@ -54,7 +78,7 @@ def Logout(request):
 
 class AdminHome(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         return render(request, 'adminsite/home.html')
@@ -62,7 +86,7 @@ class AdminHome(PermissionRequiredMixin, View):
 
 class SettingHome(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         court_number = booking_models.EachCourtInfo.objects.values_list(
@@ -72,7 +96,7 @@ class SettingHome(PermissionRequiredMixin, View):
 
 class AllCourtSetting(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         query_obj = booking_models.AllCourtInfo.objects.values().all()[0]
@@ -90,7 +114,7 @@ class AllCourtSetting(PermissionRequiredMixin, View):
 
 class EachCourtSetting(PermissionRequiredMixin, UpdateView):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     form_class = form.EachCourtForm
     model = booking_models.EachCourtInfo
@@ -102,7 +126,7 @@ class EachCourtSetting(PermissionRequiredMixin, UpdateView):
 
 class AdminBooking(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         dt_now = datetime.now()
@@ -132,16 +156,16 @@ class AdminBooking(PermissionRequiredMixin, View):
             email = data['email']
 
             q_allcourtinfo = booking_models.AllCourtInfo.objects.all()[0]
+            booking_date = datetime.strptime(str_date, '%Y-%m-%d').date()
 
             dt_now = timezone.make_aware(datetime.now())
-            exp = q_allcourtinfo.payment_member_duration
+            exp = q_allcourtinfo.payment_guest_duration
             dt_exp = dt_now + exp
 
             # from_time = datetime.strptime(from_time, '%H:%M:%S').hour
             # to_time = datetime.strptime(to_time, '%H:%M:%S').hour
             from_time = int(from_time[:2])
             to_time = int(to_time[:2])
-            booking_date = datetime.strptime(str_date, '%Y-%m-%d').date()
             booking_time = []
             for mytime in range(from_time, to_time):
                 if mytime in form.time_range():
@@ -214,9 +238,32 @@ class AdminBooking(PermissionRequiredMixin, View):
         return render(request, 'adminsite/booking.html', {'form': myform})
 
 
+class ListBooking(PermissionRequiredMixin, ListView):
+    permission_required = 'is_staff'
+    login_url = '/adminsite/login/'
+
+    model = member_models.Member
+    template_name = 'adminsite/booking_list.html'
+
+    def get_queryset(self):
+        member = booking_models.Booking.objects.all().order_by(
+            'is_deleted').order_by('-booking_datetime')
+        return member
+
+
+class DetailBooking(PermissionRequiredMixin, UpdateView):
+    permission_required = 'is_staff'
+    login_url = '/adminsite/login/'
+    fields = ('__all__')
+    # form_class = form.MemberForm
+    model = booking_models.Booking
+    template_name = 'adminsite/booking_detail.html'
+    success_url = '/adminsite/booking/'
+
+
 class ListMember(ListView):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     model = member_models.Member
     template_name = 'adminsite/member.html'
@@ -229,7 +276,7 @@ class ListMember(ListView):
 
 class DetailMember(PermissionRequiredMixin, UpdateView):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     form_class = form.MemberForm
     model = member_models.Member
@@ -239,7 +286,7 @@ class DetailMember(PermissionRequiredMixin, UpdateView):
 
 class CheckPayment(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         q_payment = booking_models.Payment.objects.all().order_by('is_checked', '-timestamp')
@@ -282,7 +329,7 @@ class CheckPayment(PermissionRequiredMixin, View):
 
 class CheckRefund(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         q_refund = booking_models.Refund.objects.all().order_by('is_refunded', 'timestamp')
@@ -314,7 +361,7 @@ class CheckRefund(PermissionRequiredMixin, View):
 
 class IncomeHome(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         myform = form.IncomeForm
@@ -323,11 +370,11 @@ class IncomeHome(PermissionRequiredMixin, View):
 
 class Income(PermissionRequiredMixin, View):
     permission_required = 'is_staff'
-    login_url = '/adminsite/login/'  # reverse('admin_login')
+    login_url = '/adminsite/login/'
 
     def get(self, request):
         month_list = list(range(1, 13))
-        labels = [calendar.month_name[i] for i in month_list]  # month_list
+        labels = [calendar.month_name[i] for i in month_list]
         year = request.GET.get('year', None)
         if year is None:
             year = datetime.now().year
@@ -340,16 +387,85 @@ class Income(PermissionRequiredMixin, View):
                 year = datetime.now().year
                 break
         income_list = []
-        income_dict = dict()
-        for i, month in enumerate(month_list):
+        usage_list = []
+        for month in month_list:
             income = 0
-            q_month = booking_models.Booking.objects.filter(payment_state=1).filter(
+            count = 0
+            q_booking = booking_models.Booking.objects.filter(payment_state=1).filter(
                 is_deleted=False).filter(booking_datetime__year=year).filter(booking_datetime__month=month)
-            for value in q_month:
+            for value in q_booking:
                 income += value.price_pay
+                count += 1
             income_list.append(income)
-            income_dict[labels[i]] = income
+            usage_list.append(count)
+            # q_usage = booking_models.Booking.objects.filter(payment_state=1).filter(
+            #     is_deleted=False).filter(booking_datetime__year=year).filter(booking_datetime__month=month)
         data = income_list
         return render(request, 'adminsite/income.html', {'labels': labels,
-                                                         'data': data,
+                                                         'income': income_list,
+                                                         'usage': usage_list
                                                          })
+
+
+class UsageHome(PermissionRequiredMixin, View):
+    permission_required = 'is_staff'
+    login_url = '/adminsite/login/'
+
+    def get(self, request):
+        myform = form.UsageForm()
+        # myform.fields['year'].choices = [(1, 1), (2, 2)]
+        return render(request, 'adminsite/usage_home.html', {'form': myform})
+
+
+class UsageInTime(PermissionRequiredMixin, View):
+    permission_required = 'is_staff'
+    login_url = '/adminsite/login/'
+
+    def get(self, request):
+        q_allcourtinfo = booking_models.AllCourtInfo.objects.all()[0]
+        time_open = q_allcourtinfo.open_time.hour
+        time_close = q_allcourtinfo.close_time.hour
+        time_list = range(0, 24)
+        if time_open > time_close:
+            time_list = list(range(time_close, time_open))
+            l = list(range(0, 24))
+            for value in time_list:
+                if value in l:
+                    l.remove(value)
+            time_list = l
+        else:
+            time_list = list(range(time_open, time_close))
+        month_list = list(range(1, 13))
+        labels = [calendar.month_name[i] for i in month_list]  # month_list
+        year_month = request.GET.get('year_month', None)
+        if year_month is None:
+            dt_now = datetime.now()
+            year = dt_now.year
+            month = dt_now.month
+        else:
+            yearmonth_list = year_month.split('-')
+            print(yearmonth_list)
+            year = yearmonth_list[0]
+            month = yearmonth_list[1]
+        year = int(year)
+        month = int(month)
+        while True:
+            try:
+                datetime(year, month, 1)
+                break
+            except Exception as e:
+                year = datetime.now().year
+                break
+        income_list = []
+        usage_list = []
+        # time_list = list(range(0, 24))
+        labels = [str(t)+':00' for t in time_list]
+        for time in time_list:
+            income = 0
+            count = 0
+            q_booking = booking_models.Booking.objects.filter(payment_state=1).filter(
+                is_deleted=False).filter(booking_datetime__year=year).filter(booking_datetime__month=month).filter(booking_datetime__hour=time)
+            usage_list.append(q_booking.count())
+        return render(request, 'adminsite/usage.html', {'labels': labels,
+                                                        'usage': usage_list
+                                                        })

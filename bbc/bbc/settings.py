@@ -26,7 +26,8 @@ SECRET_KEY = '6*23oj2o%)6s650*r)xw$ofe(tqv#!oeyui=c1z$1wf+$)d-1b'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
+                 'https://kittichat.github.io/']
 APPEND_SLASH = True
 # Application definition
 
@@ -47,23 +48,19 @@ INSTALLED_APPS = [
     'django.contrib.auth',
 ]
 
-CRONJOBS = [
-    ('*/20 * * * *', 'func.cron.my_scheduled_job')
-]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',  # csrf
+    'django.middleware.csrf.CsrfViewMiddleware',  # csrf
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # CORS
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-
-    # test
+    # Disable CSRF
     'func.disable.DisableCSRF',
 ]
 
@@ -75,7 +72,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'func.disable.CsrfExemptSessionAuthentication',
     ],
-    # 'DATETIME_FORMATS': ['iso-8601', '%Y-%m-%dT%H:%M:%S.%f%z']
 }
 
 ROOT_URLCONF = 'bbc.urls'
@@ -205,7 +201,8 @@ CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3000',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'https://kittichat.github.io'
 ]
 
 # CORS_ORIGIN_REGEX_WHITELIST = [

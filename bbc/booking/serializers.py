@@ -3,18 +3,6 @@ from . import models
 from datetime import datetime as dt
 
 
-# class StatusSerializer(serializers.ModelSerializer):
-#     court_id = serializers.StringRelatedField(
-#         read_only=True, allow_null=True)
-
-#     court_num = serializers.StringRelatedField(
-#         read_only=True, allow_null=True)
-
-#     class Meta:
-#         model = models.Status
-#         fields = ('court_id', 'court_num',  'name', 'time', 'time_out')
-
-
 class EachCourtInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.EachCourtInfo
@@ -35,7 +23,6 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Payment
-        # fields = ('__all__')
         exclude = ('id', 'member', 'group', 'is_checked', 'is_founded')
 
 
@@ -51,4 +38,3 @@ class HistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Booking
         fields = ('number', 'date', 'court', 'time', 'bookingid')
-        # fields = ('court__court_number',)

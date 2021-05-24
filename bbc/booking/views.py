@@ -100,15 +100,15 @@ class Booking(APIView):
             time_open = q_allcourtinfo.open_time.hour
             time_close = q_allcourtinfo.close_time.hour
             time = range(0, 24)
-            # if time_open > time_close:
-            #     time = list(range(time_close, time_open))
-            #     l = list(range(0, 24))
-            #     for value in time:
-            #         if value in l:
-            #             l.remove(value)
-            #     time = l
-            # else:
-            #     time = list(range(time_open, time_close))
+            if time_open > time_close:
+                time = list(range(time_close, time_open))
+                l = list(range(0, 24))
+                for value in time:
+                    if value in l:
+                        l.remove(value)
+                time = l
+            else:
+                time = list(range(time_open, time_close))
             court_list = models.EachCourtInfo.objects.values_list(
                 "court_number", flat=True).order_by('court_number')
             status_list = list()
@@ -133,19 +133,29 @@ class Booking(APIView):
 
     def post(self, request):  # book court
         booking = request.data['arr']
+        strbooking_date = request.data['date']
+
+        booking_date = datetime.strptime(strbooking_date, '%Y-%m-%d').date()
         booking_obj_list = list()
         all_price_normal = 0
         all_ds_time = 0
         all_ds_mem = 0
 
         q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
+        fes_start = q_allcourtinfo.fes_date_start
+        fes_end = q_allcourtinfo.fes_date_end
 
         if request.user.id is not None:
             name = request.user.first_name
             email = request.user.email
             tel = mem_models.Member.objects.get(username=request.user).tel
             member = mem_models.Member.objects.get(username=request.user)
-            exp = q_allcourtinfo.payment_member_duration
+            if booking_date >= fes_start and booking_date <= fes_end:
+                exp = q_allcourtinfo.payment_member_duration_fes
+                refund_dur = q_allcourtinfo.refund_member_duration_fes
+            else:
+                exp = q_allcourtinfo.payment_member_duration
+                refund_dur = q_allcourtinfo.refund_member_duration
         else:
             name = request.data['name']
             email = request.data['email']
@@ -153,9 +163,7 @@ class Booking(APIView):
             member = None
             exp = q_allcourtinfo.payment_guest_duration
 
-        strbooking_date = request.data['date']
-        booking_date = datetime.strptime(strbooking_date, '%Y-%m-%d').date()
-
+        print(email)
         dt_now = timezone.make_aware(datetime.now())
         dt_exp = dt_now + exp
 
@@ -194,7 +202,8 @@ class Booking(APIView):
                     price_normal=price_normal,
                     price_ds=ds_mem+ds_time,
                     price_pay=price_normal-ds_mem-ds_time,
-                    bookingid=bookingid)
+                    bookingid=bookingid,
+                    refund_datetime=booking_datetime - refund_dur)
 
                 if booking_created:
                     booking_obj_list.append(booking_obj)
@@ -262,7 +271,15 @@ class GroupBooking(APIView):
                 "court_number", flat=True).order_by('court_number')
             status_list = list()
             history_groupbooking_list = list()
-
+            if time_open > time_close:
+                time24 = list(range(time_close, time_open))
+                l = list(range(0, 24))
+                for value in time24:
+                    if value in l:
+                        l.remove(value)
+                time24 = l
+            else:
+                time24 = list(range(time_open, time_close))
             dt_now = timezone.make_aware(datetime.now())
             gapday = q_allcourtinfo.groupbooking_lastmonth_day
             gapdate = timezone.make_aware(
@@ -403,10 +420,13 @@ class GroupBooking(APIView):
         member = q_header
         exp = q_allcourtinfo.payment_group_duration
         gapday = q_allcourtinfo.groupbooking_lastmonth_day
+        refund_day = q_allcourtinfo.refund_group_day
 
         dt_exp = dt_now + exp
         gapdate = timezone.make_aware(
             datetime(dt_now.year, dt_now.month, gapday))
+        refund_datetime = timezone.make_aware(
+            datetime(dt_now.year, dt_now.month, refund_day, 0, 0, 0))
 
         if dt_now <= gapdate:  # for old groupbooking in this gap
             for value in booking:
@@ -464,7 +484,8 @@ class GroupBooking(APIView):
                                 price_normal=price_normal,
                                 price_ds=ds_group+ds_time,
                                 price_pay=price_normal-ds_group-ds_time,
-                                bookingid=bookingid)
+                                bookingid=bookingid,
+                                refund_datetime=refund_datetime)
 
                             if booking_created:
                                 booking_obj_list.append(booking_obj)
@@ -524,7 +545,8 @@ class GroupBooking(APIView):
                                 price_normal=price_normal,
                                 price_ds=ds_group+ds_time,
                                 price_pay=price_normal-ds_group-ds_time,
-                                bookingid=bookingid)
+                                bookingid=bookingid,
+                                refund_datetime=refund_datetime)
 
                             if booking_created:
                                 booking_obj_list.append(booking_obj)
@@ -645,6 +667,7 @@ class Payment(APIView):
                 value.exp_datetime = None
                 value.save()
             email = booking_obj_list[0].email
+            print(email)
             html = render_to_string('booking_success.html', {'object': booking_obj_list,
                                                              'paymentid': payment_obj.paymentid})
             send_mail(
@@ -668,7 +691,7 @@ class Refunding(APIView):
         data = request.data
         action = data['action']
         all_bookingid = data['bookingid']
-
+        dt_now = timezone.make_aware(datetime.now())
         if len(all_bookingid) == 0:
             return JsonResponse({'msg': 'Try Again not have any bookingid', 'success': False})
         banking_id = data['banking_id']
@@ -678,7 +701,7 @@ class Refunding(APIView):
         for bookingid in all_bookingid:
             try:
                 obj = models.Booking.objects.get(member_id=request.user.id, group=None,
-                                                 bookingid=bookingid, payment_state=1, is_deleted=False)
+                                                 bookingid=bookingid, payment_state=1, is_deleted=False, refund_datetime__gt=dt_now)
             except Exception as e:
                 print(e)
                 return JsonResponse({'msg': f'bookingid {bookingid} not found',
@@ -853,9 +876,9 @@ class History(APIView):
                 booking_list[i]['action'] = ['pay', 'cancel']
             elif booking_q[i].payment_state == 1:
                 booking_list[i]['state'] = 'success'
-                if booking_q[i].booking_datetime > refund_datetime:
+                if booking_q[i].refund_datetime > dt_now:
                     booking_list[i]['timeout'] = (
-                        booking_q[i].booking_datetime - refund_dur).strftime("%d-%m-%Y %H:%M")
+                        booking_q[i].refund_datetime).strftime("%d-%m-%Y %H:%M")
                     booking_list[i]['action'] = ['refund']
                 else:
                     booking_list[i]['timeout'] = None
@@ -921,17 +944,6 @@ class BookingToPaymentAndCancel(APIView):
                 value.exp_datetime = None
                 value.is_deleted = True
                 value.save()
-            email = booking_obj_list[0].email
-            html = render_to_string('booking_success.html', {'object': booking_obj_list,
-                                                             'paymentid': payment_obj.paymentid})
-            send_mail(
-                'Booking Badminton Court Successfully',
-                message=None,
-                html_message=html,
-                recipient_list=[email],
-                from_email=None,
-                fail_silently=False,
-            )
 
             return JsonResponse({'msg': 'Cancel successful', 'success': False})
 
@@ -940,20 +952,26 @@ class SuccessToRefunding(APIView):
     def get(self, request):
         if request.user.id is None:
             return JsonResponse({'msg': 'Pls login', 'success': False})
+
         q_allcourtinfo = models.AllCourtInfo.objects.all()[0]
         dt_now = timezone.make_aware(datetime.now())
         refund_dur = q_allcourtinfo.refund_member_duration
         refund_datetime = dt_now+refund_dur
+
         booking_q = models.Booking.objects.filter(
             member_id=request.user.id).filter(group=None).filter(payment_state=1).filter(booking_datetime__gt=refund_datetime)
+
         booking_q = sorted(booking_q, key=lambda x: (
             x.booking_datetime.date(), x.court.court_number, x.booking_datetime.time()))
+
         booking_s = serializers.HistorySerializer(booking_q, many=True)
+
         booking_list = list(booking_s.data)
+
         for i in range(len(booking_list)):
             booking_list[i]['number'] = i+1
             booking_list[i]['timeout'] = (
-                booking_q[i].booking_datetime - refund_dur).strftime("%d-%m-%Y %H:%M")
+                booking_q[i].refund_datetime).strftime("%d-%m-%Y %H:%M")
 
         return JsonResponse({'data': booking_list, 'success': True})
 

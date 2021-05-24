@@ -18,34 +18,21 @@ class AllCourtInfo(models.Model):
     # must pay in this duration(group)
     payment_group_duration = models.DurationField(null=True)
     # group can book same last month this day
-
     refund_member_duration = models.DurationField()  # refund duration only
-    # refund_duration = models.DurationField()  # refund duration only
-
-    refund_member_percent = models.DecimalField(
-        max_digits=5, decimal_places=2)  # percent can refund in time
-    # refund_percent = models.DecimalField(
-    #     max_digits=5, decimal_places=2)  # percent can refund in time
-
     groupbooking_lastmonth_day = models.PositiveIntegerField(null=True)
     refund_group_day = models.PositiveIntegerField(
         null=True)  # refund day only
-    refund_group_percent = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True)  # percent can refund in time
-
     open_time = models.TimeField()
     close_time = models.TimeField()
     # use when member create group(not include header)
     num_of_creategroup = models.PositiveIntegerField()
     announce = models.CharField(max_length=1000)  # for annouce information
-
-    contacts = models.CharField(max_length=500)  # for promote something
-    # ads = models.CharField(max_length=500)  # for promote something
-
+    contacts = models.CharField(max_length=500)  # for contacts
     rules = models.CharField(max_length=1000)  # store rule when go to court
-    # store information for payment
-    bank_acc_id = models.CharField(max_length=15, null=True)
-    bank_acc_name = models.CharField(max_length=50, null=True)
+    fes_date_start = models.DateField(null=True)
+    fes_date_end = models.DateField(null=True)
+    payment_member_duration_fes = models.DurationField(null=True)
+    refund_member_duration_fes = models.DurationField(null=True)
 
 
 class EachCourtInfo(models.Model):
@@ -76,6 +63,8 @@ class Booking(models.Model):
         EachCourtInfo, on_delete=models.CASCADE, db_constraint=False)  # what court
     booking_datetime = models.DateTimeField()  # datetime booking
     exp_datetime = models.DateTimeField(null=True)  # for pay in this time
+    refund_datetime = models.DateTimeField(
+        default=timezone.make_aware(datetime.now()))  # for pay in this time
     price_normal = models.DecimalField(
         max_digits=5, decimal_places=2)  # each booking slot
     price_ds = models.DecimalField(
@@ -94,9 +83,6 @@ class Booking(models.Model):
     refundid = models.CharField(max_length=32, null=True)
     # use when delete by member or admin but stored
     is_deleted = models.BooleanField(default=False)
-
-    def get_year(self):
-        return self.booking_datetime.year
 
 
 class Payment(models.Model):

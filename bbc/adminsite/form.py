@@ -89,26 +89,38 @@ def year_choice():
     return year_dict
 
 
+def yearmonth_choice():
+    q = booking_models.Booking.objects.filter(payment_state=1).filter(
+        is_deleted=False)
+    yearmonth_list = list(dict.fromkeys(
+        [str(x.booking_datetime.year)+str(x.booking_datetime.month) for x in q]))
+    yearmonth_dict = list()
+    for value in yearmonth_list:
+        yearmonth_dict.append(
+            (value[:4]+'-'+value[4:], value[:4]+'-'+value[4:]))
+    return yearmonth_dict
+
+
 class AllCourtForm(forms.ModelForm):
     class Meta:
         model = AllCourtInfo
         fields = ('__all__')
-        # requireds = {
-        #     'force_close': True,
-        # }
         widgets = {
             'open_time': forms.TimeInput(format='%H:%M'),
             'close_time': forms.TimeInput(format='%H:%M'),
             'announce': forms.Textarea(),
             'contacts': forms.Textarea(),
             'rules': forms.Textarea(),
-
+            'fes_date_start': forms.SelectDateWidget(),
+            'fes_date_end': forms.SelectDateWidget()
         }
         labels = {
             'num_of_creategroup': 'Number of create group',
             'announce': 'Announce',
             'contacts': 'Contacts',
-            'rules': 'Rules'
+            'rules': 'Rules',
+            'fes_date_start': 'Festival Date Start',
+            'fes_date_end': 'Festival Date End'
         }
 
     range_booking = forms.ChoiceField(
@@ -165,6 +177,27 @@ class AllCourtForm(forms.ModelForm):
         label='Refund before ... for member'
     )
 
+    payment_member_duration_fes = forms.ChoiceField(
+        choices=[
+            (timedelta(minutes=1), "1 min"),
+            (timedelta(minutes=3), "3 mins"),
+            (timedelta(minutes=5), "5 mins"),
+            (timedelta(minutes=10), "10 mins"),
+            (timedelta(minutes=30), "30 mins"),
+            (timedelta(hours=1), "1 hour"),
+        ],
+        label='Payment after booking for member in Festival time'
+    )
+
+    refund_member_duration_fes = forms.ChoiceField(
+        choices=[
+            (timedelta(days=1), "1 day"),
+            (timedelta(days=3), "3 days"),
+            (timedelta(days=7), "7 days"),
+        ],
+        label='Refund before ... for member in Festival time'
+    )
+
 
 class EachCourtForm(forms.ModelForm):
     class Meta:
@@ -178,8 +211,6 @@ class EachCourtForm(forms.ModelForm):
 
 
 class BookingForm(forms.Form):
-    # date = forms.DateField(widget=forms.SelectDateWidget(
-    #     empty_label=("Choose Year", "Choose Month", "Choose Day")))
     date = forms.ChoiceField(choices=date_choice())
     from_time = forms.ChoiceField(choices=time_choices)
     to_time = forms.ChoiceField(choices=time_choices2)
@@ -190,8 +221,6 @@ class BookingForm(forms.Form):
 
 
 class MemberForm(forms.ModelForm):
-
-    this_year = datetime.now().year
 
     class Meta:
         model = Member
@@ -210,3 +239,7 @@ class CheckPaymentForm(forms.ModelForm):
 
 class IncomeForm(forms.Form):
     year = forms.ChoiceField(choices=year_choice())
+
+
+class UsageForm(forms.Form):
+    year_month = forms.ChoiceField(choices=yearmonth_choice())

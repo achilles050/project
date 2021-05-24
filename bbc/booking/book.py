@@ -74,8 +74,6 @@ def check_valid_group(court, mytime, mydate):  # time in hour unit
             time_range = l
         else:
             time_range = list(range(info.open_time.hour, info.close_time.hour))
-        # inrange_member = True  # for bypass booking this month or booking out of member's range
-        # past = True  # for bypass booking this month
         if mytime in time_range and valid and not maintain and past and inrange and inrange_member:
             return True
         else:
@@ -106,36 +104,3 @@ def check_valid_group_history_for_booking(court, mydate, mytime, mygroup):
     except Exception as e:
         print('Error is : ', e)
         return None
-
-
-# def refund_check(history_id):
-#     try:
-#         m = models.HistoryMember.objects.filter(
-#             id=history_id).filter(status=True)
-#         print('ok')
-#     except:
-#         print('error!!!')
-
-
-# def sendemail():
-#     send_mail(
-#         subject='SubjectTest',  # Subject here
-#         message='MessageTest',  # Here is the message.
-#         from_email='@gmail.com',  # from@example.com
-#         recipient_list=['thorn3579@gmail.com'],  # to@example.com
-#         fail_silently=False,
-#     )
-
-
-def test():
-    try:
-        # sendemail()
-        send_mail(
-            subject='SubjectTest',  # Subject here
-            message='MessageTest',  # Here is the message.
-            from_email='bbctesting02@gmail.com',  # from@example.com
-            recipient_list=['thorn3579@gmail.com'],  # to@example.com
-            fail_silently=False,
-        )
-    except Exception as e:
-        print(e)
