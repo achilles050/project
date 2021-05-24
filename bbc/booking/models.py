@@ -8,7 +8,7 @@ from datetime import datetime
 
 class AllCourtInfo(models.Model):
     class Meta:
-        db_table = 'bbc_allcourtinfo'
+        db_table = 'bcb_allcourtinfo'
 
     force_close = models.BooleanField(default=False)  # for close allcourt
     range_booking = models.DurationField()  # range can booking before
@@ -37,7 +37,7 @@ class AllCourtInfo(models.Model):
 
 class EachCourtInfo(models.Model):
     class Meta:
-        db_table = 'bbc_eachcourtinfo'
+        db_table = 'bcb_eachcourtinfo'
     court_number = models.IntegerField(unique=True)
     price_normal = models.DecimalField(max_digits=5, decimal_places=2)
     price_ds_mem = models.DecimalField(max_digits=5, decimal_places=2)
@@ -50,7 +50,7 @@ class EachCourtInfo(models.Model):
 
 class Booking(models.Model):
     class Meta:
-        db_table = 'bbc_booking'
+        db_table = 'bcb_booking'
     name = models.CharField(max_length=100)  # for show who's booked
     email = models.EmailField()
     tel = models.CharField(max_length=15)
@@ -87,10 +87,8 @@ class Booking(models.Model):
 
 class Payment(models.Model):
     class Meta:
-        db_table = 'bbc_payment'
+        db_table = 'bcb_payment'
     paymentid = models.CharField(max_length=32, unique=True)
-    payment_pic = models.ImageField(
-        null=True, upload_to='payment_pic')  # for upload slip to server
     # time when send slip for checking can be approximate
     timestamp = models.DateTimeField(
         default=timezone.make_aware(datetime.now()))
@@ -107,7 +105,7 @@ class Payment(models.Model):
 
 class Refund(models.Model):
     class Meta:
-        db_table = 'bbc_refund'
+        db_table = 'bcb_refund'
     refundid = models.CharField(max_length=32, unique=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     group = models.ForeignKey(

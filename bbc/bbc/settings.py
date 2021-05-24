@@ -38,13 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'phonenumber_field',
     'rest_framework',
     'corsheaders',  # cors
     'func',
     'member',
     'booking',
-    'django_crontab',
     'django.contrib.auth',
 ]
 

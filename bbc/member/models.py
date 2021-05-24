@@ -9,7 +9,7 @@ from django.conf import settings
 
 class Group(models.Model):
     class Meta:
-        db_table = 'bbc_group'
+        db_table = 'bcb_group'
     group_name = models.CharField(max_length=100, unique=True)
     announce = models.CharField(max_length=500)
     # change when pay to next month court to True(use cronjob check this change below)
@@ -22,7 +22,7 @@ class Group(models.Model):
 
 class GroupMember(models.Model):
     class Meta:
-        db_table = 'bbc_groupmember'
+        db_table = 'bcb_groupmember'
     group = models.ForeignKey(
         Group, on_delete=models.CASCADE, null=True, related_name='groups', db_constraint=False)
     member = models.ForeignKey(
@@ -38,7 +38,7 @@ class Member(User):
         return uuid4().hex[:8]
 
     class Meta:
-        db_table = 'bbc_member'
+        db_table = 'bcb_member'
     user_ptr = models.OneToOneField(auto_created=True, on_delete=models.CASCADE,
                                     parent_link=True, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL, db_constraint=False)
     tel = models.CharField(max_length=10)
@@ -53,7 +53,7 @@ class Member(User):
 class Request(models.Model):
 
     class Meta:
-        db_table = 'bbc_request'
+        db_table = 'bcb_request'
     group = models.ForeignKey(
         Group, on_delete=models.CASCADE, null=True, db_constraint=False)
     sender = models.ForeignKey(
